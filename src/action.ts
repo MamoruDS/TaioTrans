@@ -1,7 +1,7 @@
 import * as constant from './constant'
 import * as utils from './utils'
 import * as flow from './flow'
-import * as taioJS from './taioJS'
+import * as builtInJS from './builtIn'
 import * as beautify from 'js-beautify'
 
 export const SESSION_PREFIX =
@@ -321,7 +321,7 @@ export class TaioAction {
         return _ID
     }
     // public forEach(): void {}
-    public runJavaScript(fn: taioJS.runJS): void {
+    public runJavaScript(fn: builtInJS.runJS): void {
         const indentLen = 4
         const code: string[] = beautify('' + fn, {
             indent_size: indentLen,
