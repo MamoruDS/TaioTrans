@@ -97,7 +97,7 @@ export interface TaioFlowMenu extends TaioFlowItem {
     parameters: {
         prompt: TaioFlowVal
         multiValue: boolean
-        line: TaioFlowVal
+        lines: TaioFlowVal
     }
 }
 // ### Show Alert

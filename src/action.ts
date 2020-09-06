@@ -221,7 +221,7 @@ export class TaioAction {
             parameters: {
                 prompt: this._genTaioFlowVal(title),
                 multiValue: multiSelect,
-                line: this._genTaioFlowVal(items.join('\n')),
+                lines: this._genTaioFlowVal(items.join('\n')),
             },
         }
         this._push(_)
