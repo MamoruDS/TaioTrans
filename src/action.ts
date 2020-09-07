@@ -9,6 +9,13 @@ export const SESSION_PREFIX =
     '-' +
     utils.genRandomStr(4)
 
+type AltParam = string | FlowVariable
+
+const getRawStrFromParma = (param?: AltParam): string => {
+    param = param || new FlowVariable('@input')
+    return param + ''
+}
+
 class FlowVariable {
     private _VID: string
     constructor(presetID?: string) {
@@ -162,20 +169,10 @@ export class TaioAction extends CustomStackItem {
     private _addAction(item: flow.TaioFlowItem) {
         this._actions.push(item)
     }
-    private _genTaioFlowVal = (
-        value?: string | FlowVariable
-    ): flow.TaioFlowVal => {
-        if (typeof value == 'undefined') {
-            return {
-                value: '$',
-                tokens: [
-                    {
-                        location: 0,
-                        value: '@input',
-                    },
-                ],
-            }
-        }
+    private _getTaioFlowValFromParam(param?: AltParam): flow.TaioFlowVal {
+        return this._genTaioFlowVal(getRawStrFromParma(param))
+    }
+    private _genTaioFlowVal = (value: string): flow.TaioFlowVal => {
         const re = new RegExp(
             `(${SESSION_PREFIX}-((V-[\\w]{6})|${this._signedVars
                 .map((name) => {
@@ -189,7 +186,6 @@ export class TaioAction extends CustomStackItem {
             value: undefined,
             tokens: [],
         } as flow.TaioFlowVal
-        value = value + ''
         while (true) {
             const match = re.exec(value)
             if (match == null) break
@@ -228,13 +224,11 @@ export class TaioAction extends CustomStackItem {
         this._addAction(_)
     }
     // ## Text
-    public createText(
-        text: string | FlowVariable = this.builtInVars('Last Result').toString()
-    ): void {
+    public createText(text: AltParam): void {
         const _: flow.TaioFlowText = {
             type: '@text',
             parameters: {
-                text: this._genTaioFlowVal(text),
+                text: this._getTaioFlowValFromParam(text),
             },
         }
         this._addAction(_)
@@ -250,16 +244,18 @@ export class TaioAction extends CustomStackItem {
     // ## User Interface
     // public textInput(): void {}
     public selectMenu(
-        items: (string | FlowVariable)[] = [this.builtInVars('Last Result')],
+        items: AltParam[],
         multiSelect: boolean = false,
-        title: string = ''
+        title: AltParam
     ): void {
         const _: flow.TaioFlowMenu = {
             type: '@ui.menu',
             parameters: {
-                prompt: this._genTaioFlowVal(title),
+                prompt: this._getTaioFlowValFromParam(title),
                 multiValue: multiSelect,
-                lines: this._genTaioFlowVal(items.join('\n')),
+                lines: this._getTaioFlowValFromParam(
+                    Array.isArray(items) ? items.join('\n') : undefined
+                ),
             },
         }
         this._addAction(_)
@@ -300,12 +296,7 @@ export class TaioAction extends CustomStackItem {
     // public if(): void {}
     // public afterDelay(): void {}
     // public finishRunning(): void {}
-    public setVariable(
-        value: string | FlowVariable = this.builtInVars(
-            'Last Result'
-        ).toString(),
-        name?: string
-    ): FlowVariable {
+    public setVariable(value: AltParam, name?: string): FlowVariable {
         const v = new FlowVariable(name)
         const _: flow.TaioFlowVarSet = {
             type: '@flow.set-variable',
@@ -313,7 +304,7 @@ export class TaioAction extends CustomStackItem {
                 name: {
                     value: v.VID,
                 },
-                value: this._genTaioFlowVal(value),
+                value: this._getTaioFlowValFromParam(value),
             },
         }
         this._addAction(_)
@@ -393,18 +384,14 @@ export class TaioAction extends CustomStackItem {
     // public openURL(): void {}
     // public webSearch(): void {}
     public HTTPRequest(
-        url: string | FlowVariable = this.builtInVars('Last Result').toString(),
+        url: AltParam,
         method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' = 'GET',
-        headers:
-            | {
-                  [key: string]: string | FlowVariable
-              }
-            | FlowVariable = {},
-        body:
-            | {
-                  [key: string]: string | FlowVariable
-              }
-            | FlowVariable = {}
+        headers: {
+            [key: string]: AltParam
+        } = {},
+        body: {
+            [key: string]: AltParam
+        } = {}
     ): void {
         let methodNr: number = 0
         const methods: string[] = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
@@ -417,7 +404,7 @@ export class TaioAction extends CustomStackItem {
         const _: flow.TaioFlowRequest = {
             type: '@util.request',
             parameters: {
-                url: this._genTaioFlowVal(url),
+                url: this._getTaioFlowValFromParam(url),
                 method: methodNr,
                 body: this._genTaioFlowVal(JSON.stringify(body)),
                 headers: this._genTaioFlowVal(JSON.stringify(headers)),
