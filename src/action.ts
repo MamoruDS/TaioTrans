@@ -25,7 +25,41 @@ class FlowVariable {
     }
 }
 
-export class TaioAction {
+type CustomStack = {
+    id: string
+    item: CustomStackItem
+}[]
+
+class CustomStackItem {
+    protected _stack: CustomStack
+    protected _ID: string
+    constructor(stack: CustomStack = []) {
+        this._ID = utils.genRandomHex(6)
+        this._stack = stack
+        stack.unshift({
+            id: this._ID,
+            item: this,
+        })
+    }
+    protected _pop(): void {
+        if (this._stack[0]['id'] == this._ID) {
+            this._stack.shift()
+        } else {
+            throw new Error(
+                `Invalid operation of <CustomStackItem>\n\ton destory("${this._ID}")`
+            )
+        }
+    }
+    protected _print(): void {
+        console.log(
+            this._stack.map((item) => {
+                return item.id
+            })
+        )
+    }
+}
+
+export class TaioAction extends CustomStackItem {
     private _actions: flow.TaioFlowItem[]
     private _buildVersion: number
     private _clientMinVersion: number
@@ -35,8 +69,9 @@ export class TaioAction {
     public iconGlyph: string
     public iconColor: flow.HEX
     private _signedVars: string[]
-    constructor(name?: string) {
-        this.name = name || 'untitled'
+    constructor(actionStack?: CustomStack) {
+        super(actionStack)
+        this.name = 'untitled'
         this.summary = ''
         this.iconGlyph = constant.DEFAULT_ICON
         this.iconColor = constant.DEFAULT_ICON_COLOR
@@ -124,10 +159,12 @@ export class TaioAction {
         return preset[name]
     }
 
-    private _push(item: flow.TaioFlowItem) {
+    private _addAction(item: flow.TaioFlowItem) {
         this._actions.push(item)
     }
-    private _genTaioFlowVal = (value?: string): flow.TaioFlowVal => {
+    private _genTaioFlowVal = (
+        value?: string | FlowVariable
+    ): flow.TaioFlowVal => {
         if (typeof value == 'undefined') {
             return {
                 value: '$',
@@ -152,6 +189,7 @@ export class TaioAction {
             value: undefined,
             tokens: [],
         } as flow.TaioFlowVal
+        value = value + ''
         while (true) {
             const match = re.exec(value)
             if (match == null) break
@@ -187,11 +225,11 @@ export class TaioAction {
                 },
             },
         }
-        this._push(_)
+        this._addAction(_)
     }
     // ## Text
     public createText(
-        text: string = this.builtInVars('Last Result').toString()
+        text: string | FlowVariable = this.builtInVars('Last Result').toString()
     ): void {
         const _: flow.TaioFlowText = {
             type: '@text',
@@ -199,7 +237,7 @@ export class TaioAction {
                 text: this._genTaioFlowVal(text),
             },
         }
-        this._push(_)
+        this._addAction(_)
     }
     // public textCase(): void {}
     // public encodeText(): void {}
@@ -224,7 +262,7 @@ export class TaioAction {
                 lines: this._genTaioFlowVal(items.join('\n')),
             },
         }
-        this._push(_)
+        this._addAction(_)
     }
     // public showAlert(): void {}
     // public showConfirmDialog(): void {}
@@ -263,9 +301,12 @@ export class TaioAction {
     // public afterDelay(): void {}
     // public finishRunning(): void {}
     public setVariable(
-        value: string = this.builtInVars('Last Result').toString()
+        value: string | FlowVariable = this.builtInVars(
+            'Last Result'
+        ).toString(),
+        name?: string
     ): FlowVariable {
-        const v = new FlowVariable()
+        const v = new FlowVariable(name)
         const _: flow.TaioFlowVarSet = {
             type: '@flow.set-variable',
             parameters: {
@@ -275,7 +316,7 @@ export class TaioAction {
                 value: this._genTaioFlowVal(value),
             },
         }
-        this._push(_)
+        this._addAction(_)
         return v
     }
     public getVariable(
@@ -291,13 +332,14 @@ export class TaioAction {
                 },
             },
         }
-        this._push(_)
+        this._addAction(_)
     }
     public repeatBlock(
         count: number,
         repeatScope: (scope: TaioAction) => void
     ): flow.BID {
-        const _scope = new TaioAction()
+        const _scope = new TaioAction(this._stack)
+        // const _scope = this._push()
         const _ID = flow.genBID()
         const reapeatHead: flow.TaioFlowRepeat = {
             type: '@flow.repeat-begin',
@@ -306,18 +348,19 @@ export class TaioAction {
                 count: count,
             },
         }
-        this._push(reapeatHead)
+        this._addAction(reapeatHead)
         repeatScope(_scope)
         for (const item of _scope.flowExport()) {
-            this._push(item)
+            this._addAction(item)
         }
+        _scope._pop()
         const reapeatTail: flow.TaioFlowRepeat = {
             type: '@flow.repeat-end',
             parameters: {
                 blockIdentifier: _ID,
             },
         }
-        this._push(reapeatTail)
+        this._addAction(reapeatTail)
         return _ID
     }
     // public forEach(): void {}
@@ -339,7 +382,7 @@ export class TaioAction {
                 },
             },
         }
-        this._push(_)
+        this._addAction(_)
     }
     // ## Utilities
     // public showDictionaryDefinition(): void {}
@@ -350,14 +393,18 @@ export class TaioAction {
     // public openURL(): void {}
     // public webSearch(): void {}
     public HTTPRequest(
-        url: string = this.builtInVars('Last Result').toString(),
+        url: string | FlowVariable = this.builtInVars('Last Result').toString(),
         method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' = 'GET',
-        headers: {
-            [key: string]: string | FlowVariable
-        } = {},
-        body: {
-            [key: string]: string | FlowVariable
-        } = {}
+        headers:
+            | {
+                  [key: string]: string | FlowVariable
+              }
+            | FlowVariable = {},
+        body:
+            | {
+                  [key: string]: string | FlowVariable
+              }
+            | FlowVariable = {}
     ): void {
         let methodNr: number = 0
         const methods: string[] = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
@@ -376,7 +423,7 @@ export class TaioAction {
                 headers: this._genTaioFlowVal(JSON.stringify(headers)),
             },
         }
-        this._push(_)
+        this._addAction(_)
     }
     // public markdown2HTML(): void {}
     // ## Sharing
