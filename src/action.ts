@@ -59,7 +59,7 @@ class CustomStackItem {
             this._stack.shift()
         } else {
             throw new Error(
-                `Invalid operation of <CustomStackItem>\n\ton destory("${this._ID}")`
+                `Invalid operation in <CustomStackItem>\n\ton destory("${this._ID}")`
             )
         }
     }
@@ -93,6 +93,7 @@ export class TaioAction extends CustomStackItem {
         this._clientMinVersion = constant.CLIENT_MIN_VERSION
         this._clientVersion = constant.CLIENT_VERSION
         this._signedVars = [
+            '{(?<user>([\\w|_|-])+)}',
             '@input',
             '@clipboard.text',
             '@date.style\\(\\d,\\d\\)',
@@ -103,7 +104,6 @@ export class TaioAction extends CustomStackItem {
             '@editor.selection-text',
             '@editor.selection-location',
             '@editor.selection-length',
-            // '{([\\w|_|-])+}',
         ]
     }
     public builtInVars(
@@ -194,7 +194,7 @@ export class TaioAction extends CustomStackItem {
     }
     private _genTaioFlowVal = (value: string): flow.TaioFlowVal => {
         const re = new RegExp(
-            `(${SESSION_PREFIX}-((V-[\\w]{6})|${this._signedVars
+            `(${SESSION_PREFIX}-(?<mat>(?<auto>V-[\\w]{6})|${this._signedVars
                 .map((name) => {
                     return '(' + name + ')'
                 })
@@ -209,10 +209,14 @@ export class TaioAction extends CustomStackItem {
         while (true) {
             const match = re.exec(value)
             if (match == null) break
+            // console.log(match.groups)
             matches.push({
                 start: match.index,
                 len: +match[0].length,
-                VID: match[2],
+                VID:
+                    match.groups['user'] ||
+                    match.groups['auto'] ||
+                    match.groups['mat'],
             })
         }
         const valarr: string[] = value.split('')
@@ -317,6 +321,14 @@ export class TaioAction extends CustomStackItem {
     // public afterDelay(): void {}
     // public finishRunning(): void {}
     public setVariable(value: AltParam, name?: string): FlowVariable {
+        if (typeof name == 'string') {
+            if (/^[\w|_|-]+$/g.exec(name) == null) {
+                throw new Error(
+                    `Invalid operation in <TaioAction>\n\ton allocate new variable with invalid name "${name}"`
+                )
+            }
+            name = `{${name}}`
+        }
         const v = new FlowVariable(name, this._stack)
         const _: flow.TaioFlowVarSet = {
             type: '@flow.set-variable',
