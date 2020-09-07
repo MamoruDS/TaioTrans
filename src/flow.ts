@@ -21,7 +21,6 @@ export const DATE_STYLE = {
     'Long Style': 3,
     'Full Style': 4,
 }
-
 export const TIME_STYLE = {
     'No Style': 0,
     'Short Style': 1,
@@ -60,7 +59,7 @@ type TaioFlowToken = { location: number; value: '@input' | string }
 
 export interface TaioFlowItem {
     type: string
-    parameters: {}
+    parameters?: {}
 }
 
 // ## General
@@ -81,9 +80,55 @@ export interface TaioFlowText extends TaioFlowItem {
     }
 }
 // ### Text Case
+export interface TaioFlowTextCase extends TaioFlowItem {
+    type: '@text.case'
+    parameters: {
+        mode: number // 0 | 1 | 2
+        text: TaioFlowVal
+    }
+}
+export const optionTextCase = {
+    'Upper Case': 0,
+    'Lower Case': 1,
+    Capitalize: 2,
+}
 // ### Encode/Decode Text
+export interface TaioFlowTextEncode extends TaioFlowItem {
+    type: '@text.encode'
+    parameters: {
+        mode: number
+        decode: boolean
+        text: TaioFlowVal
+    }
+}
+export const optionTextEncode = {
+    'URL Encode': 0,
+    'Base64 Encode': 1,
+    'HTML Entity Encode': 2,
+    'JSON Escape': 3,
+}
 // ### Count
+export interface TaioFlowTextCount extends TaioFlowItem {
+    type: '@text.count'
+    parameters: {
+        mode: number
+        text: TaioFlowVal
+    }
+}
+export const optionTextCount = {
+    'By Line': 0,
+    'By Word': 1,
+    'By Character': 2,
+}
 // ### Text in Range
+export interface TaioFlowTextRange extends TaioFlowItem {
+    type: '@text.extract-range'
+    parameters: {
+        text: TaioFlowVal
+        location: number
+        length: number
+    }
+}
 // ### Text Filter
 // ### Text Tokenization
 // ### Find & Replace
@@ -145,8 +190,36 @@ export interface TaioFlowRender extends TaioFlowItem {
 
 // ## Scripting
 // ### If
+export const TaioFlowCondition = {
+    'Equal to': 0,
+    'Not Equal to': 1,
+    Contains: 2,
+    'Not Contain': 3,
+    'Begins with': 4,
+    'Ends with': 5,
+    'Matches Regex': 6,
+}
+export type TaioFlowElse = () => void
+export interface TaioFlowConditionControl {
+    type: '@flow.if' | '@flow.else' | '@flow.endif'
+    parameters: {
+        blockIdentifier: string
+        condition?: number
+        lhs?: TaioFlowVal
+        rhs?: TaioFlowVal
+    }
+}
 // ### After Delay
+export interface TaioFlowDelay extends TaioFlowItem {
+    type: '@flow.delay'
+    parameters: {
+        interval: number
+    }
+}
 // ### Finish Running
+export interface TaioFlowFinish extends TaioFlowItem {
+    type: '@flow.finish'
+}
 // ### Set Variable
 export interface TaioFlowVarSet extends TaioFlowItem {
     type: '@flow.set-variable'
