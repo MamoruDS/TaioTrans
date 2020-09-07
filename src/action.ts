@@ -17,8 +17,10 @@ const getRawStrFromParma = (param?: AltParam): string => {
 }
 
 class FlowVariable {
+    private _actionStack: CustomStack
     private _VID: string
-    constructor(presetID?: string) {
+    constructor(presetID?: string, stack?: CustomStack) {
+        this._actionStack = stack
         this._VID = presetID || `V-${utils.genRandomStr(6)}`
     }
     get VID(): string {
@@ -29,6 +31,10 @@ class FlowVariable {
     }
     public toJSON(): string {
         return SESSION_PREFIX + '-' + this._VID
+    }
+    public assign(value?: AltParam): void {
+        const action = this._actionStack[0]['item'] as TaioAction
+        action.setVariable(value, this._VID)
     }
 }
 
@@ -132,11 +138,12 @@ export class TaioAction extends CustomStackItem {
             }
             if (P.length == 0) {
                 return new FlowVariable(
-                    `@date.style(${style.dateStyle},${style.timeStyle})`
+                    `@date.style(${style.dateStyle},${style.timeStyle})`,
+                    this._stack
                 )
             }
             if (typeof P[0] == 'string') {
-                return new FlowVariable(`@date.format(${P[0]})`)
+                return new FlowVariable(`@date.format(${P[0]})`, this._stack)
             } else {
                 try {
                     style.dateStyle =
@@ -147,21 +154,34 @@ export class TaioAction extends CustomStackItem {
                         flow.TIME_STYLE[P[0]['timeStyle']] || style.timeStyle
                 } catch (e) {}
                 return new FlowVariable(
-                    `@date.style(${style.dateStyle},${style.timeStyle})`
+                    `@date.style(${style.dateStyle},${style.timeStyle})`,
+                    this._stack
                 )
             }
         }
         const preset: {
             [key: string]: FlowVariable
         } = {
-            'Last Result': new FlowVariable('@input'),
-            Clipboard: new FlowVariable('@clipboard.text'),
-            'File Name': new FlowVariable('@editor.file-name'),
-            'File Extension': new FlowVariable('@editor.file-extension'),
-            'Full Text': new FlowVariable('@editor.full-text'),
-            'Selected Text': new FlowVariable('@editor.selection-text'),
-            'Selected Location': new FlowVariable('@editor.selection-location'),
-            'Selected Length': new FlowVariable('@editor.selection-length'),
+            'Last Result': new FlowVariable('@input', this._stack),
+            Clipboard: new FlowVariable('@clipboard.text', this._stack),
+            'File Name': new FlowVariable('@editor.file-name', this._stack),
+            'File Extension': new FlowVariable(
+                '@editor.file-extension',
+                this._stack
+            ),
+            'Full Text': new FlowVariable('@editor.full-text', this._stack),
+            'Selected Text': new FlowVariable(
+                '@editor.selection-text',
+                this._stack
+            ),
+            'Selected Location': new FlowVariable(
+                '@editor.selection-location',
+                this._stack
+            ),
+            'Selected Length': new FlowVariable(
+                '@editor.selection-length',
+                this._stack
+            ),
         }
         return preset[name]
     }
@@ -297,7 +317,7 @@ export class TaioAction extends CustomStackItem {
     // public afterDelay(): void {}
     // public finishRunning(): void {}
     public setVariable(value: AltParam, name?: string): FlowVariable {
-        const v = new FlowVariable(name)
+        const v = new FlowVariable(name, this._stack)
         const _: flow.TaioFlowVarSet = {
             type: '@flow.set-variable',
             parameters: {
