@@ -357,10 +357,58 @@ export class TaioAction extends CustomStackItem {
         }
         this._addAction(_)
     }
-    // public textFilter(): void {}
-    // public textTokenization(): void {}
-    // public findAndReplace(): void {}
-    // public trimText(): void {}
+    public textFilter(
+        text?: AltParam,
+        pattern?: AltParam,
+        mode: keyof typeof flow.optionTextFilter = 'Phone Number'
+    ): void {
+        const _: flow.TaioFlowTextFilter = {
+            type: '@text.filter',
+            parameters: {
+                text: this._getTaioFlowValFromParam(text),
+                mode: flow.optionTextFilter[mode],
+                pattern: this._getTaioFlowValFromParam(pattern),
+            },
+        }
+        this._addAction(_)
+    }
+    public textTokenization(text?: AltParam): void {
+        const _: flow.TaioFlowTextTokenize = {
+            type: '@text.tokenize',
+            parameters: {
+                text: this._getTaioFlowValFromParam(text),
+            },
+        }
+    }
+    public findAndReplace(
+        text?: AltParam,
+        pattern?: AltParam,
+        replacement?: AltParam,
+        mode: keyof typeof flow.optionTextReplace = 'Case Insensitive'
+    ): void {
+        const _: flow.TaioFlowTextReplace = {
+            type: '@text.replace',
+            parameters: {
+                text: this._getTaioFlowValFromParam(text),
+                pattern: this._getTaioFlowValFromParam(pattern),
+                replacement: this._getTaioFlowValFromParam(replacement),
+                mode: flow.optionTextReplace[mode],
+            },
+        }
+    }
+    public trimText(
+        text?: AltParam,
+        mode: keyof typeof flow.optionTextTrim = 'Empty Characters'
+    ): void {
+        const _: flow.TaioFlowTextTrim = {
+            type: '@text.trim',
+            parameters: {
+                text: this._getTaioFlowValFromParam(text),
+                mode: flow.optionTextTrim[mode],
+            },
+        }
+        this._addAction(_)
+    }
     // ## User Interface
     // public textInput(): void {}
     public selectMenu(

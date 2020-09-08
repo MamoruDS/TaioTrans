@@ -130,9 +130,55 @@ export interface TaioFlowTextRange extends TaioFlowItem {
     }
 }
 // ### Text Filter
+export interface TaioFlowTextFilter extends TaioFlowItem {
+    type: '@text.filter'
+    parameters: {
+        text: TaioFlowVal
+        mode: number
+        pattern: TaioFlowVal
+    }
+}
+export const optionTextFilter = {
+    'Phone Number': 0,
+    Link: 1,
+    'Email Address': 2,
+    Date: 3,
+    'Regular Expression': 4,
+}
 // ### Text Tokenization
+export interface TaioFlowTextTokenize extends TaioFlowItem {
+    type: '@text.tokenize'
+    parameters: {
+        text: TaioFlowVal
+    }
+}
 // ### Find & Replace
+export interface TaioFlowTextReplace extends TaioFlowItem {
+    type: '@text.replace'
+    parameters: {
+        text: TaioFlowVal
+        replacement: TaioFlowVal
+        mode: number
+        pattern: TaioFlowVal
+    }
+}
+export const optionTextReplace = {
+    'Case Insensitive': 0,
+    'Case Sensitive': 1,
+    'Regular Expression': 2,
+}
 // ### Trim Text
+export interface TaioFlowTextTrim extends TaioFlowItem {
+    type: '@text.trim'
+    parameters: {
+        text: TaioFlowVal
+        mode: number
+    }
+}
+export const optionTextTrim = {
+    'Empty Characters': 0,
+    'Empty Lines': 1,
+}
 
 // ## User Interface
 // ### Text Input
