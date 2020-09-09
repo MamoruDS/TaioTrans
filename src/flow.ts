@@ -38,7 +38,7 @@ export const genBID = (): string => {
 }
 
 export type TaioFlowInfo = {
-    actions: TaioFlowItem[]
+    actions: TaioFlowAction[]
     buildVersion: number
     name: string
     clientMinVersion: number
@@ -57,14 +57,18 @@ export type TaioFlowVal = {
 
 type TaioFlowToken = { location: number; value: '@input' | string }
 
-export interface TaioFlowItem {
+export interface TaioFlowAction {
     type: string
     parameters?: {}
 }
 
+export interface TaioFlowActionExt extends TaioFlowAction {
+    clientMinVersion: number
+}
+
 // ## General
 // ### Comment
-export interface TaioFlowComment extends TaioFlowItem {
+export interface TaioFlowComment extends TaioFlowActionExt {
     type: '@comment'
     parameters: {
         text: TaioFlowVal
@@ -73,14 +77,14 @@ export interface TaioFlowComment extends TaioFlowItem {
 
 // ## Text
 // ### Create Text
-export interface TaioFlowText extends TaioFlowItem {
+export interface TaioFlowText extends TaioFlowActionExt {
     type: '@text'
     parameters: {
         text: TaioFlowVal
     }
 }
 // ### Text Case
-export interface TaioFlowTextCase extends TaioFlowItem {
+export interface TaioFlowTextCase extends TaioFlowActionExt {
     type: '@text.case'
     parameters: {
         mode: number // 0 | 1 | 2
@@ -93,7 +97,7 @@ export const optionTextCase = {
     Capitalize: 2,
 }
 // ### Encode/Decode Text
-export interface TaioFlowTextEncode extends TaioFlowItem {
+export interface TaioFlowTextEncode extends TaioFlowActionExt {
     type: '@text.encode'
     parameters: {
         mode: number
@@ -108,7 +112,7 @@ export const optionTextEncode = {
     'JSON Escape': 3,
 }
 // ### Count
-export interface TaioFlowTextCount extends TaioFlowItem {
+export interface TaioFlowTextCount extends TaioFlowActionExt {
     type: '@text.count'
     parameters: {
         mode: number
@@ -121,7 +125,7 @@ export const optionTextCount = {
     'By Character': 2,
 }
 // ### Text in Range
-export interface TaioFlowTextRange extends TaioFlowItem {
+export interface TaioFlowTextRange extends TaioFlowActionExt {
     type: '@text.extract-range'
     parameters: {
         text: TaioFlowVal
@@ -130,7 +134,7 @@ export interface TaioFlowTextRange extends TaioFlowItem {
     }
 }
 // ### Text Filter
-export interface TaioFlowTextFilter extends TaioFlowItem {
+export interface TaioFlowTextFilter extends TaioFlowActionExt {
     type: '@text.filter'
     parameters: {
         text: TaioFlowVal
@@ -146,14 +150,14 @@ export const optionTextFilter = {
     'Regular Expression': 4,
 }
 // ### Text Tokenization
-export interface TaioFlowTextTokenize extends TaioFlowItem {
+export interface TaioFlowTextTokenize extends TaioFlowActionExt {
     type: '@text.tokenize'
     parameters: {
         text: TaioFlowVal
     }
 }
 // ### Find & Replace
-export interface TaioFlowTextReplace extends TaioFlowItem {
+export interface TaioFlowTextReplace extends TaioFlowActionExt {
     type: '@text.replace'
     parameters: {
         text: TaioFlowVal
@@ -168,7 +172,7 @@ export const optionTextReplace = {
     'Regular Expression': 2,
 }
 // ### Trim Text
-export interface TaioFlowTextTrim extends TaioFlowItem {
+export interface TaioFlowTextTrim extends TaioFlowActionExt {
     type: '@text.trim'
     parameters: {
         text: TaioFlowVal
@@ -182,8 +186,30 @@ export const optionTextTrim = {
 
 // ## User Interface
 // ### Text Input
+export interface TaioFlowTextInput extends TaioFlowActionExt {
+    type: '@ui.text-input'
+    parameters: {
+        prompt: TaioFlowVal
+        keyboardType: number
+        initialText: TaioFlowVal
+    }
+}
+export const optionTextInput = {
+    Default: 0,
+    ASCII: 1,
+    'Number & Punctuation': 2,
+    URL: 3,
+    'Number Pad': 4,
+    'Phone Pad': 5,
+    'Name Phone Pad': 6,
+    'Email Address': 7,
+    'Decimal Pad': 8,
+    Twitter: 9,
+    'Web Search': 10,
+    'ASCII Number Pad': 11,
+}
 // ### Select from Menu
-export interface TaioFlowMenu extends TaioFlowItem {
+export interface TaioFlowMenu extends TaioFlowActionExt {
     type: '@ui.menu'
     parameters: {
         prompt: TaioFlowVal
@@ -195,7 +221,7 @@ export interface TaioFlowMenu extends TaioFlowItem {
 // ### Show Confirm Dialog
 // ### Show Toast
 // ### Show Text
-export interface TaioFlowRender extends TaioFlowItem {
+export interface TaioFlowRender extends TaioFlowActionExt {
     type: '@ui.render-text'
     parameters: {
         title: TaioFlowVal
@@ -246,7 +272,7 @@ export const TaioFlowCondition = {
     'Matches Regex': 6,
 }
 export type TaioFlowElse = () => void
-export interface TaioFlowConditionControl {
+export interface TaioFlowConditionControl extends TaioFlowActionExt {
     type: '@flow.if' | '@flow.else' | '@flow.endif'
     parameters: {
         blockIdentifier: string
@@ -256,18 +282,18 @@ export interface TaioFlowConditionControl {
     }
 }
 // ### After Delay
-export interface TaioFlowDelay extends TaioFlowItem {
+export interface TaioFlowDelay extends TaioFlowActionExt {
     type: '@flow.delay'
     parameters: {
         interval: number
     }
 }
 // ### Finish Running
-export interface TaioFlowFinish extends TaioFlowItem {
+export interface TaioFlowFinish extends TaioFlowActionExt {
     type: '@flow.finish'
 }
 // ### Set Variable
-export interface TaioFlowVarSet extends TaioFlowItem {
+export interface TaioFlowVarSet extends TaioFlowActionExt {
     type: '@flow.set-variable'
     parameters: {
         value: TaioFlowVal
@@ -275,7 +301,7 @@ export interface TaioFlowVarSet extends TaioFlowItem {
     }
 }
 // ### Get Variable
-export interface TaioFlowVarGet extends TaioFlowItem {
+export interface TaioFlowVarGet extends TaioFlowActionExt {
     type: '@flow.get-variable'
     parameters: {
         fallback: 0 | 1
@@ -283,7 +309,7 @@ export interface TaioFlowVarGet extends TaioFlowItem {
     }
 }
 // ### Repeat Block
-export interface TaioFlowRepeat extends TaioFlowItem {
+export interface TaioFlowRepeat extends TaioFlowActionExt {
     type: '@flow.repeat-begin' | '@flow.repeat-end'
     parameters: {
         blockIdentifier: BID
@@ -292,7 +318,7 @@ export interface TaioFlowRepeat extends TaioFlowItem {
 }
 // ### For Each
 // ### Run JavaScript
-export interface TaioFlowJS extends TaioFlowItem {
+export interface TaioFlowJS extends TaioFlowActionExt {
     type: '@flow.javascript'
     parameters: {
         script: TaioFlowVal
@@ -308,7 +334,7 @@ export interface TaioFlowJS extends TaioFlowItem {
 // ### Open URL
 // ### Web Search
 // ### HTTP Request
-export interface TaioFlowRequest extends TaioFlowItem {
+export interface TaioFlowRequest extends TaioFlowActionExt {
     type: '@util.request'
     parameters: {
         body: TaioFlowVal

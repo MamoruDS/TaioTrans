@@ -79,9 +79,8 @@ type TaioFlowCondition = {
 }
 
 export class TaioAction extends CustomStackItem {
-    private _actions: flow.TaioFlowItem[]
+    private _actions: flow.TaioFlowActionExt[]
     private _buildVersion: number
-    private _clientMinVersion: number
     private _clientVersion: number
     private _localBlock?: {
         BID: string
@@ -100,7 +99,6 @@ export class TaioAction extends CustomStackItem {
         this.iconColor = constant.DEFAULT_ICON_COLOR
         this._actions = []
         this._buildVersion = constant.BUILD_VERSION
-        this._clientMinVersion = constant.CLIENT_MIN_VERSION
         this._clientVersion = constant.CLIENT_VERSION
         this._signedVars = [
             '{(?<user>([\\w|_|-])+)}',
@@ -202,6 +200,7 @@ export class TaioAction extends CustomStackItem {
                 switch (this._localBlock.type) {
                     case 'repeat': {
                         const reapeatTail: flow.TaioFlowRepeat = {
+                            clientMinVersion: 1,
                             type: '@flow.repeat-end',
                             parameters: {
                                 blockIdentifier: this._localBlock.BID,
@@ -214,6 +213,7 @@ export class TaioAction extends CustomStackItem {
                     case 'condition': {
                         const conditionFi: flow.TaioFlowConditionControl = {
                             type: '@flow.endif',
+                            clientMinVersion: 1,
                             parameters: {
                                 blockIdentifier: this._localBlock.BID,
                             },
@@ -230,7 +230,10 @@ export class TaioAction extends CustomStackItem {
         }
         return false
     }
-    private _addAction(item: flow.TaioFlowItem, targetBlockId?: string): void {
+    private _addAction(
+        item: flow.TaioFlowActionExt,
+        targetBlockId?: string
+    ): void {
         this._localBlockAutoComplete(targetBlockId)
         this._actions.push(item)
     }
@@ -283,6 +286,7 @@ export class TaioAction extends CustomStackItem {
     public comment(text: string = ''): void {
         const _: flow.TaioFlowComment = {
             type: '@comment',
+            clientMinVersion: 1,
             parameters: {
                 text: {
                     value: text,
@@ -295,6 +299,7 @@ export class TaioAction extends CustomStackItem {
     public createText(text?: AltParam): void {
         const _: flow.TaioFlowText = {
             type: '@text',
+            clientMinVersion: 1,
             parameters: {
                 text: this._getTaioFlowValFromParam(text),
             },
@@ -307,6 +312,7 @@ export class TaioAction extends CustomStackItem {
     ): void {
         const _: flow.TaioFlowTextCase = {
             type: '@text.case',
+            clientMinVersion: 1,
             parameters: {
                 mode: flow.optionTextCase[mode],
                 text: this._getTaioFlowValFromParam(text),
@@ -321,6 +327,7 @@ export class TaioAction extends CustomStackItem {
     ): void {
         const _: flow.TaioFlowTextEncode = {
             type: '@text.encode',
+            clientMinVersion: 1,
             parameters: {
                 mode: flow.optionTextEncode[mode],
                 decode: decode ? true : false,
@@ -335,6 +342,7 @@ export class TaioAction extends CustomStackItem {
     ): void {
         const _: flow.TaioFlowTextCount = {
             type: '@text.count',
+            clientMinVersion: 1,
             parameters: {
                 mode: flow.optionTextCount[mode],
                 text: this._getTaioFlowValFromParam(text),
@@ -349,6 +357,7 @@ export class TaioAction extends CustomStackItem {
     ): void {
         const _: flow.TaioFlowTextRange = {
             type: '@text.extract-range',
+            clientMinVersion: 1,
             parameters: {
                 location: localtion,
                 length: length,
@@ -364,6 +373,7 @@ export class TaioAction extends CustomStackItem {
     ): void {
         const _: flow.TaioFlowTextFilter = {
             type: '@text.filter',
+            clientMinVersion: 1,
             parameters: {
                 text: this._getTaioFlowValFromParam(text),
                 mode: flow.optionTextFilter[mode],
@@ -375,6 +385,7 @@ export class TaioAction extends CustomStackItem {
     public textTokenization(text?: AltParam): void {
         const _: flow.TaioFlowTextTokenize = {
             type: '@text.tokenize',
+            clientMinVersion: 1,
             parameters: {
                 text: this._getTaioFlowValFromParam(text),
             },
@@ -388,6 +399,7 @@ export class TaioAction extends CustomStackItem {
     ): void {
         const _: flow.TaioFlowTextReplace = {
             type: '@text.replace',
+            clientMinVersion: 1,
             parameters: {
                 text: this._getTaioFlowValFromParam(text),
                 pattern: this._getTaioFlowValFromParam(pattern),
@@ -402,6 +414,7 @@ export class TaioAction extends CustomStackItem {
     ): void {
         const _: flow.TaioFlowTextTrim = {
             type: '@text.trim',
+            clientMinVersion: 1,
             parameters: {
                 text: this._getTaioFlowValFromParam(text),
                 mode: flow.optionTextTrim[mode],
@@ -418,6 +431,7 @@ export class TaioAction extends CustomStackItem {
     ): void {
         const _: flow.TaioFlowMenu = {
             type: '@ui.menu',
+            clientMinVersion: 1,
             parameters: {
                 prompt: this._getTaioFlowValFromParam(title),
                 multiValue: multiSelect,
@@ -471,6 +485,7 @@ export class TaioAction extends CustomStackItem {
         const _ID = flow.genBID()
         const conditionIf: flow.TaioFlowConditionControl = {
             type: '@flow.if',
+            clientMinVersion: 1,
             parameters: {
                 blockIdentifier: _ID,
                 condition: flow.TaioFlowCondition[condition.condition || 0],
@@ -490,6 +505,7 @@ export class TaioAction extends CustomStackItem {
         _scope._pop()
         const conditionElse: flow.TaioFlowConditionControl = {
             type: '@flow.else',
+            clientMinVersion: 1,
             parameters: {
                 blockIdentifier: _ID,
             },
@@ -512,6 +528,7 @@ export class TaioAction extends CustomStackItem {
     public afterDelay(interval: number = 1): void {
         const _: flow.TaioFlowDelay = {
             type: '@flow.delay',
+            clientMinVersion: 1,
             parameters: {
                 interval: interval,
             },
@@ -521,6 +538,7 @@ export class TaioAction extends CustomStackItem {
     public finishRunning(): void {
         const _: flow.TaioFlowFinish = {
             type: '@flow.finish',
+            clientMinVersion: 1,
         }
         this._addAction(_)
     }
@@ -536,6 +554,7 @@ export class TaioAction extends CustomStackItem {
         const v = new FlowVariable(name, this._stack)
         const _: flow.TaioFlowVarSet = {
             type: '@flow.set-variable',
+            clientMinVersion: 1,
             parameters: {
                 name: {
                     value: v.VID,
@@ -552,6 +571,7 @@ export class TaioAction extends CustomStackItem {
     ): void {
         const _: flow.TaioFlowVarGet = {
             type: '@flow.get-variable',
+            clientMinVersion: 1,
             parameters: {
                 fallback: allowUndefined ? 0 : 1,
                 name: {
@@ -569,6 +589,7 @@ export class TaioAction extends CustomStackItem {
         const _ID = flow.genBID()
         const reapeatHead: flow.TaioFlowRepeat = {
             type: '@flow.repeat-begin',
+            clientMinVersion: 1,
             parameters: {
                 blockIdentifier: _ID,
                 count: count,
@@ -598,6 +619,7 @@ export class TaioAction extends CustomStackItem {
         }
         const _: flow.TaioFlowJS = {
             type: '@flow.javascript',
+            clientMinVersion: 1,
             parameters: {
                 script: {
                     value: code.join('\n'),
@@ -634,6 +656,7 @@ export class TaioAction extends CustomStackItem {
         }
         const _: flow.TaioFlowRequest = {
             type: '@util.request',
+            clientMinVersion: 1,
             parameters: {
                 url: this._getTaioFlowValFromParam(url),
                 method: methodNr,
@@ -652,34 +675,44 @@ export class TaioAction extends CustomStackItem {
     get flowBuildVersion(): number {
         return this._buildVersion
     }
-    get flowClientMinVersion(): number {
-        return this._clientMinVersion
-    }
+    // get flowClientMinVersion(): number {}
     get flowClientVersion(): number {
         return this._clientVersion
     }
     public flowSpawn(): TaioAction {
         return new TaioAction(this._stack)
     }
-    public flowExport(): flow.TaioFlowItem[] {
+    public flowExport(): flow.TaioFlowActionExt[] {
         return this._actions
     }
-    public flowImport(item: flow.TaioFlowItem): void {
+    public flowImport(item: flow.TaioFlowActionExt): void {
         this._actions.push(item)
     }
     public flowParse(): flow.TaioFlowInfo {
         this._localBlockAutoComplete()
+        const actions = [] as flow.TaioFlowAction[]
+        let clientMinVersion: number = 1
+        this._actions.forEach((a) => {
+            actions.push({
+                type: a.type,
+                parameters: a.parameters,
+            })
+            clientMinVersion =
+                a.clientMinVersion > clientMinVersion
+                    ? a.clientMinVersion
+                    : clientMinVersion
+        })
         return {
             name: this.name,
             summary: this.summary,
             buildVersion: this._buildVersion,
             clientVersion: this._clientVersion,
-            clientMinVersion: this._clientMinVersion,
+            clientMinVersion: clientMinVersion,
             icon: {
                 glyph: this.iconGlyph,
                 color: this.iconColor,
             },
-            actions: this._actions,
+            actions: actions,
         }
     }
 }
