@@ -12,7 +12,8 @@ export const SESSION_PREFIX =
 type AltParam = string | FlowVariable
 
 const getRawStrFromParma = (param?: AltParam): string => {
-    param = param || new FlowVariable('@input')
+    param =
+        typeof param === 'string' ? param : param || new FlowVariable('@input')
     return param + ''
 }
 
@@ -21,16 +22,19 @@ class FlowVariable {
     private _VID: string
     constructor(presetID?: string, stack?: CustomStack) {
         this._actionStack = stack
-        this._VID = presetID || `V-${utils.genRandomStr(6)}`
+        this._VID = presetID || `${utils.genRandomStr(6)}`
     }
     get VID(): string {
         return this._VID
     }
+    private _varStringify(): string {
+        return SESSION_PREFIX + '-{' + this._VID + '}'
+    }
     public toString(): string {
-        return SESSION_PREFIX + '-' + this._VID
+        return this._varStringify()
     }
     public toJSON(): string {
-        return SESSION_PREFIX + '-' + this._VID
+        return this._varStringify()
     }
     public assign(value?: AltParam): void {
         const action = this._actionStack[0]['item'] as TaioAction
@@ -101,7 +105,7 @@ export class TaioAction extends CustomStackItem {
         this._buildVersion = constant.BUILD_VERSION
         this._clientVersion = constant.CLIENT_VERSION
         this._signedVars = [
-            '{(?<user>([\\w|_|-])+)}',
+            '(?<user>([\\w|_|-])+)',
             '@input',
             '@clipboard.text',
             '@date.style\\(\\d,\\d\\)',
@@ -112,7 +116,9 @@ export class TaioAction extends CustomStackItem {
             '@editor.selection-text',
             '@editor.selection-location',
             '@editor.selection-length',
-        ]
+        ].map((item) => {
+            return `{${item}}`
+        })
     }
     public builtInVars(
         name:
@@ -242,9 +248,9 @@ export class TaioAction extends CustomStackItem {
     }
     private _genTaioFlowVal = (value: string): flow.TaioFlowVal => {
         const re = new RegExp(
-            `(${SESSION_PREFIX}-(?<mat>(?<auto>V-[\\w]{6})|${this._signedVars
-                .map((name) => {
-                    return '(' + name + ')'
+            `(${SESSION_PREFIX}-(?<mat>${this._signedVars
+                .map((preset) => {
+                    return '(' + preset + ')'
                 })
                 .join('|')}))+`,
             'gm'
@@ -260,10 +266,7 @@ export class TaioAction extends CustomStackItem {
             matches.push({
                 start: match.index,
                 len: +match[0].length,
-                VID:
-                    match.groups['user'] ||
-                    match.groups['auto'] ||
-                    match.groups['mat'],
+                VID: match.groups['user'] || match.groups['mat'].slice(1, -1),
             })
         }
         const valarr: string[] = value.split('')
@@ -424,20 +427,18 @@ export class TaioAction extends CustomStackItem {
     }
     // ## User Interface
     // public textInput(): void {}
-    public selectMenu(
-        items: AltParam[],
-        multiSelect: boolean = false,
-        title: AltParam
+    public selectFromMenu(
+        items: AltParam,
+        title: AltParam,
+        multiSelect: boolean = false
     ): void {
         const _: flow.TaioFlowMenu = {
             type: '@ui.menu',
             clientMinVersion: 1,
             parameters: {
+                lines: this._getTaioFlowValFromParam(items),
                 prompt: this._getTaioFlowValFromParam(title),
                 multiValue: multiSelect,
-                lines: this._getTaioFlowValFromParam(
-                    Array.isArray(items) ? items.join('\n') : undefined
-                ),
             },
         }
         this._addAction(_)
@@ -445,7 +446,16 @@ export class TaioAction extends CustomStackItem {
     // public showAlert(): void {}
     // public showConfirmDialog(): void {}
     // public showToast(): void {}
-    // public showText(): void {}
+    public showText(text: AltParam): void {
+        const _: flow.TaioFlowText = {
+            type: '@text',
+            clientMinVersion: 1,
+            parameters: {
+                text: this._getTaioFlowValFromParam(text),
+            },
+        }
+        this._addAction(_)
+    }
     // public showHTML(): void {}
     // public compareDiff(): void {}
     // ## List
@@ -549,7 +559,6 @@ export class TaioAction extends CustomStackItem {
                     `Invalid operation in <TaioAction>\n\ton allocate new variable with invalid name "${name}"`
                 )
             }
-            name = `{${name}}`
         }
         const v = new FlowVariable(name, this._stack)
         const _: flow.TaioFlowVarSet = {
@@ -566,17 +575,15 @@ export class TaioAction extends CustomStackItem {
         return v
     }
     public getVariable(
-        variable: FlowVariable,
-        allowUndefined: boolean = true
+        name: AltParam,
+        fallback: keyof typeof flow.optionGlobalTaioFallback = 'Return Empty Text'
     ): void {
         const _: flow.TaioFlowVarGet = {
             type: '@flow.get-variable',
             clientMinVersion: 1,
             parameters: {
-                fallback: allowUndefined ? 0 : 1,
-                name: {
-                    value: variable.VID,
-                },
+                fallback: flow.optionGlobalTaioFallback[fallback],
+                name: this._getTaioFlowValFromParam(name),
             },
         }
         this._addAction(_)

@@ -558,7 +558,7 @@ export interface TaioFlowVarSet extends TaioFlowActionExt {
 export interface TaioFlowVarGet extends TaioFlowActionExt {
     type: '@flow.get-variable'
     parameters: {
-        fallback: 0 | 1
+        fallback: number
         name: TaioFlowVal
     }
 }
