@@ -120,6 +120,10 @@ export class TaioAction extends CustomStackItem {
             return `{${item}}`
         })
     }
+    protected _pop() {
+        this._localBlockAutoComplete()
+        super._pop()
+    }
     public builtInVars(
         name:
             | 'Last Result'
@@ -509,10 +513,10 @@ export class TaioAction extends CustomStackItem {
             type: 'condition',
         }
         conditionScope(_scope)
+        _scope._pop()
         for (const item of _scope.flowExport()) {
             this._addAction(item, _ID)
         }
-        _scope._pop()
         const conditionElse: flow.TaioFlowConditionControl = {
             type: '@flow.else',
             clientMinVersion: 1,
@@ -530,10 +534,10 @@ export class TaioAction extends CustomStackItem {
         const _scope = new TaioAction(this._stack)
         const _ID = this._localBlock['BID']
         conditionScope(_scope)
+        _scope._pop()
         for (const item of _scope.flowExport()) {
             this._addAction(item, _ID)
         }
-        _scope._pop()
     }
     public afterDelay(interval: number = 1): void {
         const _: flow.TaioFlowDelay = {
@@ -608,10 +612,10 @@ export class TaioAction extends CustomStackItem {
             type: 'repeat',
         }
         repeatScope(_scope)
+        _scope._pop()
         for (const item of _scope.flowExport()) {
             this._addAction(item, _ID)
         }
-        _scope._pop()
     }
     // public forEach(): void {}
     public runJavaScript(fn: builtInJS.runJS): void {
