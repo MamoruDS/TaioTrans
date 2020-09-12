@@ -261,7 +261,7 @@ export interface TaioFlowToast extends TaioFlowActionExt {
         waitUntilDone: boolean
     }
 }
-export const optionTaioToastStyle = {
+export const optionToastStyle = {
     'Text Only': 0,
     Success: 1,
     Error: 2,
@@ -302,7 +302,7 @@ export interface TaioFlowListFilter extends TaioFlowActionExt {
         pattern: TaioFlowVal
     }
 }
-export const optionTaioListFilterMatchMode = {
+export const optionListFilterMatchMode = {
     Contains: 0,
     'Not Contain': 1,
     'Regular Expression': 2,
@@ -322,7 +322,7 @@ export interface TaioFlowListReverse extends TaioFlowActionExt {
         mode: number
     }
 }
-export const optionTaioListReverseMode = {
+export const optionListReverseMode = {
     'By Line': 0,
     'By Character': 1,
 }
@@ -334,7 +334,7 @@ export interface TaioFlowListSort extends TaioFlowActionExt {
         mode: number
     }
 }
-export const optionTaioListSortMode = {
+export const optionListSortMode = {
     Ascending: 0,
     Descending: 1,
 }
@@ -363,7 +363,7 @@ export interface TaioFlowListTruncate extends TaioFlowActionExt {
         mode: number
     }
 }
-export const TaioFlowListTruncateMode = {
+export const optionListTruncateMode = {
     Prefix: 0,
     Suffix: 1,
 }
@@ -415,12 +415,12 @@ export interface TaioFlowEditorSetText extends TaioFlowActionExt {
     }
 }
 // ### Extend Selection
-export const optionTaioEditorSelectionDirection = {
+export const optionEditorSelectionDirection = {
     Backward: 0,
     Forward: 1,
     Both: 2, // default
 }
-export const optionTaioEditorSelectionUnit = {
+export const optionEditorSelectionUnit = {
     'By Document': 0,
     'By Line': 1, // default
     'By Character': 2,
@@ -502,7 +502,7 @@ export interface TaioFlowClipGet extends TaioFlowActionExt {
         mode: number
     }
 }
-export const optionTaioClipContentType = {
+export const optionClipContentType = {
     'Latest Content': 0,
     'All Contents': 1,
 }
@@ -582,7 +582,7 @@ export interface TaioFlowForEach extends TaioFlowActionExt {
         reverse: boolean
     }
 }
-export const optionTaioForEachMode = {
+export const optionForEachMode = {
     'Each Line': 0,
     'Each Regex Match': 1,
 }
@@ -641,7 +641,7 @@ export interface TaioFlowOpenURL extends TaioFlowActionExt {
         browser: number
     }
 }
-export const optionTaioBrowser = {
+export const optionBrowser = {
     'In-app Safari': 0,
     Safari: 1,
 }
@@ -662,6 +662,13 @@ export interface TaioFlowRequest extends TaioFlowActionExt {
         headers: TaioFlowVal
     }
 }
+export const optionRequestMethod = {
+    GET: 0,
+    POST: 1,
+    PUT: 2,
+    PATCH: 3,
+    DELETE: 4,
+}
 // ### Markdown to HTML
 export interface TaioFlowMD2HTML extends TaioFlowActionExt {
     type: '@doc.md-html'
@@ -680,7 +687,7 @@ export interface TaioFlowShareSheet extends TaioFlowActionExt {
         mode: number
     }
 }
-export const optionTaioShareSheet = {
+export const optionShareSheet = {
     Text: 0,
     Link: 1,
 }
@@ -695,4 +702,171 @@ export interface TaioFlowComposeEmail extends TaioFlowActionExt {
 export interface TaioFlowComposeTextMessage extends TaioFlowActionExt {
     recipients: TaioFlowVal
     body: TaioFlowVal
+}
+
+import { AltParam } from './action'
+
+export interface Actions {
+    comment(text?: string): void
+    createText(Input?: AltParam): void
+    textCase(text?: AltParam): void
+    encodeDecodeText(
+        text?: AltParam,
+        encodeMode?: keyof typeof optionTextEncode,
+        decode?: boolean
+    ): void
+    count(text?: AltParam, countMode?: keyof typeof optionTextCount): void
+    textInRange(text?: AltParam, location?: number, length?: number): void
+    textFilter(
+        text?: AltParam,
+        matchMode?: keyof typeof optionListFilterMatchMode,
+        pattern?: AltParam
+    ): void
+    textTokenization(input?: AltParam): void
+    findAndReplace(
+        text?: AltParam,
+        search?: AltParam,
+        replaceWith?: AltParam,
+        matchMode?: keyof typeof optionTextReplace
+    ): void
+    trimText(text?: AltParam, trimmingMode?: keyof typeof optionTextTrim): void
+    textInput(
+        prompt?: AltParam,
+        initialText?: AltParam,
+        keyboardType?: keyof typeof optionTextInput
+    ): void
+    selectFromMenu(
+        options?: AltParam,
+        prompt?: AltParam,
+        multipleValue?: boolean
+    ): void
+    showAlert(
+        title?: AltParam,
+        message?: AltParam,
+        configureButtons?: number,
+        showCancelButton?: boolean
+    ): void
+    showConfirmDialog(input?: AltParam): void
+    showToast(
+        title?: AltParam,
+        toastStyle?: keyof typeof optionToastStyle,
+        waitUntilDone?: boolean
+    ): void
+    showText(input?: AltParam, title?: AltParam): void
+    showHTML(
+        code?: AltParam,
+        title?: AltParam,
+        showsProgress?: boolean,
+        opaqueBackground?: boolean
+    ): void
+    compareDiff(text1?: AltParam, text2?: AltParam): void
+    filterLines(
+        test?: AltParam,
+        matchMode?: keyof typeof optionListFilterMatchMode,
+        pattern?: AltParam
+    ): void
+    deduplicateLines(input?: AltParam): void
+    reverseText(
+        text?: AltParam,
+        revertMode?: keyof typeof optionListReverseMode
+    ): void
+    sortLines(text?: AltParam, sortMode?: keyof typeof optionListSortMode): void
+    splitText(text?: AltParam, separator?: AltParam): void
+    mergeText(lines?: AltParam, jointer?: AltParam): void
+    truncateLines(
+        lines?: AltParam,
+        length?: number,
+        truncateMode?: keyof typeof optionListTruncateMode
+    ): void
+    newDocument(
+        text?: AltParam,
+        fileName?: AltParam,
+        location?: keyof typeof optionGlobalTaioEditorLocation,
+        openInEditor?: boolean
+    ): void
+    openDocument(
+        fileName?: AltParam,
+        location?: keyof typeof optionGlobalTaioEditorLocation
+    ): void
+    getFileName(includeFolder?: boolean, includeExtension?: boolean): void
+    getText(
+        fileName?: AltParam,
+        location?: keyof typeof optionGlobalTaioEditorLocation,
+        whenNotExists?: keyof typeof optionGlobalTaioFallback
+    ): void
+    setText(
+        text?: AltParam,
+        fileName?: AltParam,
+        location?: keyof typeof optionGlobalTaioEditorLocation,
+        createIfNotExists?: boolean
+    ): void
+    extendSelection(
+        selectionDirection?: keyof typeof optionEditorSelectionDirection,
+        selectionUnit?: keyof typeof optionEditorSelectionUnit,
+        numberOfCharacters?: number
+    ): void
+    getSelectedText(whenNotExists?: keyof typeof optionGlobalTaioFallback): void
+    moveCursor(
+        selectionDirection?: keyof typeof optionEditorSelectionDirection,
+        selectionUnit?: keyof typeof optionEditorSelectionUnit,
+        numberOfCharacters?: number
+    ): void
+    replaceSelectedText(input?: AltParam): void
+    selectRange(location?: number, length?: number): void
+    insertClipping(input?: AltParam): void
+    deleteClipping(input?: AltParam): void
+    replaceClipping(search?: AltParam, replaceWith?: AltParam): void
+    pinClipping(input?: AltParam): void
+    getClipping(contentType?: keyof typeof optionClipContentType): void
+    setClippingText(input?: AltParam): void
+    If(
+        condition: {
+            leftHandSide?: AltParam
+            rightHandSide?: AltParam
+            condition?: keyof typeof TaioFlowCondition
+        },
+        scope: () => void
+    ): any
+    afterDelay(delayInterval?: number): void
+    finishRunning(): void
+    setVariable(name?: AltParam, value?: AltParam): any
+    getVariable(
+        name?: AltParam,
+        whenNotExists?: keyof typeof optionGlobalTaioFallback
+    ): any
+    repeatBlock(repeatTimes: number, scope: () => void): void
+    forEach(
+        text?: AltParam,
+        forEachMode?: keyof typeof optionForEachMode,
+        pattern?: AltParam,
+        matchGroup?: number,
+        reverse?: boolean
+    ): void
+    runJavaScript(code: () => void): void
+    showDictionaryDefinition(input?: AltParam): void
+    getClipboard(): void
+    setClipboard(
+        text?: AltParam,
+        localOnly?: boolean,
+        expireAfterSeconds?: number
+    ): void
+    math(input?: AltParam): void
+    speakText(text?: AltParam, language?: AltParam, rate?: number): void
+    openURL(url?: AltParam, browser?: keyof typeof optionBrowser): void
+    webSearch(input?: AltParam): void
+    httpRequest(
+        url?: AltParam,
+        method?: keyof typeof optionRequestMethod,
+        headers?: AltParam,
+        body?: AltParam
+    ): void
+    markdownToHTML(input?: AltParam, includeTemplate?: boolean): void
+    shareSheet(text?: AltParam, shareAs?: keyof typeof optionShareSheet): void
+    composeEmail(
+        recipients?: AltParam,
+        subject?: AltParam,
+        messageBody?: AltParam,
+        isHTML?: boolean
+    ): void
+    composeTextMessage(recipients?: AltParam, messageBody?: AltParam): void
 }
