@@ -11,7 +11,7 @@ export const SESSION_PREFIX =
     '-' +
     utils.genRandomStr(4)
 
-export type AltParam = string | FlowVariable
+export type AltParam = string | object | boolean | FlowVariable
 
 const SIGNED_VARS = [
     '(?<user>([\\w|_|-])+)',
@@ -30,8 +30,21 @@ const SIGNED_VARS = [
 })
 
 const getRawStrFromParma = (param?: AltParam): string => {
-    param =
-        typeof param === 'string' ? param : param || new FlowVariable('@input')
+    if (!(param instanceof FlowVariable)) {
+        if (typeof param == 'object' && param != null) {
+            if (Array.isArray(param)) {
+                param = param.map((i) => {
+                    return JSON.stringify(i)
+                }).join('\n')
+            } else {
+                param = JSON.stringify(param, null, 2)
+            }
+        } else if (typeof param == 'string') {
+            //
+        } else {
+            param = JSON.stringify(param) || new FlowVariable('@input')
+        }
+    }
     return param + ''
 }
 
@@ -640,7 +653,7 @@ export class TaioAction {
         this._actions.push(item)
         return
     }
-    public flowParse(): Taio.TaioFlowInfo {
+    public export(): Taio.TaioFlowInfo {
         this.autoCompleteChildScope()
         const actions = [] as Taio.TaioFlowAction[]
         let clientMinVersion: number = 1
