@@ -849,7 +849,7 @@ export interface Actions {
     getVariable(
         name?: AltParam,
         whenNotExists?: keyof typeof optionGlobalTaioFallback
-    ): any
+    ): void
     repeatBlock(repeatTimes: number, scope: () => void): void
     forEach(
         text: AltParam,

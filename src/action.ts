@@ -882,7 +882,7 @@ export class TaioAction implements Taio.Actions {
         return
     }
     // ## Scripting
-    public If(condition: TaioFlowCondition, scope: () => void) {
+    public If(condition: TaioFlowCondition, scope: () => void):TaioFlowIf {
         const taioIf = new TaioFlowIf(this, condition, scope)
         taioIf._event.addListener('exit', (scopeIf, scopeElse) => {
             this.spawnChildScope('condition', (BID) => {
@@ -1307,7 +1307,7 @@ export class TaioAction implements Taio.Actions {
     }
 }
 
-class TaioFlowIf {
+export class TaioFlowIf {
     private _action: TaioAction
     private _scopeIf: (BID: string) => void
     private _scopeElse: (BID: string) => void

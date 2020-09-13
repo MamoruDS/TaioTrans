@@ -1,4 +1,9 @@
-import { TaioAction as _TaioAction, AltParam, FlowVariable } from './action'
+import {
+    TaioAction as _TaioAction,
+    AltParam,
+    FlowVariable,
+    TaioFlowIf,
+} from './action'
 import * as Taio from './taio'
 
 class TaioAction implements Taio.Actions {
@@ -272,7 +277,7 @@ class TaioAction implements Taio.Actions {
             condition: keyof typeof Taio.TaioFlowCondition
         },
         scope: () => void
-    ): any {
+    ): TaioFlowIf {
         return this._action.If(condition, scope)
     }
     afterDelay(delayInterval?: number): void {
@@ -281,13 +286,13 @@ class TaioAction implements Taio.Actions {
     finishRunning(): void {
         this._action.finishRunning()
     }
-    setVariable(name?: string, value?: AltParam): any {
-        this._action.setVariable(name, value)
+    setVariable(name?: string, value?: AltParam): FlowVariable {
+        return this._action.setVariable(name, value)
     }
     getVariable(
         name?: AltParam,
         whenNotExists?: keyof typeof Taio.optionGlobalTaioFallback
-    ): any {
+    ): void {
         this._action.getVariable(name, whenNotExists)
     }
     repeatBlock(repeatTimes: number, scope: () => void): void {
