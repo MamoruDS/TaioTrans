@@ -1,6 +1,8 @@
+import { EventEmitter } from 'events'
+
 import * as constant from './constant'
 import * as utils from './utils'
-import * as flow from './flow'
+import * as Taio from './taio'
 import * as builtInJS from './builtIn'
 import * as beautify from 'js-beautify'
 
@@ -9,7 +11,23 @@ export const SESSION_PREFIX =
     '-' +
     utils.genRandomStr(4)
 
-type AltParam = string | FlowVariable
+export type AltParam = string | FlowVariable
+
+const SIGNED_VARS = [
+    '(?<user>([\\w|_|-])+)',
+    '@input',
+    '@clipboard.text',
+    '@date.style\\(\\d,\\d\\)',
+    '@date.format\\([^)|\\r|\\n]+\\)',
+    '@editor.file-name',
+    '@editor.file-extension',
+    '@editor.full-text',
+    '@editor.selection-text',
+    '@editor.selection-location',
+    '@editor.selection-length',
+].map((item) => {
+    return `{${item}}`
+})
 
 const getRawStrFromParma = (param?: AltParam): string => {
     param =
@@ -17,11 +35,51 @@ const getRawStrFromParma = (param?: AltParam): string => {
     return param + ''
 }
 
+const genTaioFlowVal = (value: string): Taio.TaioFlowVal => {
+    const re = new RegExp(
+        `(${SESSION_PREFIX}-(?<mat>${SIGNED_VARS.map((preset) => {
+            return '(' + preset + ')'
+        }).join('|')}))+`,
+        'gm'
+    )
+    const matches = [] as { start: number; len: number; VID: string }[]
+    const flowVal = {
+        value: undefined,
+        tokens: [],
+    } as Taio.TaioFlowVal
+    while (true) {
+        const match = re.exec(value)
+        if (match == null) break
+        matches.push({
+            start: match.index,
+            len: +match[0].length,
+            VID: match.groups['user'] || match.groups['mat'].slice(1, -1),
+        })
+    }
+    const valarr: string[] = value.split('')
+    while (true) {
+        const match = matches.pop()
+        if (typeof match == 'undefined') break
+        valarr.splice(match.start, match.len, '$')
+        flowVal.tokens.push({
+            location: match.start,
+            value: match.VID,
+        })
+    }
+    flowVal.value = valarr.join('')
+    if (flowVal.tokens.length == 0) delete flowVal.tokens
+    return flowVal
+}
+
+const getTaioFlowValFromParam = (param?: AltParam): Taio.TaioFlowVal => {
+    return genTaioFlowVal(getRawStrFromParma(param))
+}
+
 class FlowVariable {
-    private _actionStack: CustomStack
+    private _action: TaioAction
     private _VID: string
-    constructor(presetID?: string, stack?: CustomStack) {
-        this._actionStack = stack
+    constructor(presetID?: string, action?: TaioAction) {
+        this._action = action
         this._VID = presetID || `${utils.genRandomStr(6)}`
     }
     get VID(): string {
@@ -37,92 +95,47 @@ class FlowVariable {
         return this._varStringify()
     }
     public assign(value?: AltParam): void {
-        const action = this._actionStack[0]['item'] as TaioAction
-        action.setVariable(value, this._VID)
-    }
-}
-
-type CustomStack = {
-    id: string
-    item: CustomStackItem
-}[]
-
-class CustomStackItem {
-    protected _stack: CustomStack
-    protected _ID: string
-    constructor(stack: CustomStack = []) {
-        this._ID = utils.genRandomHex(6)
-        this._stack = stack
-        stack.unshift({
-            id: this._ID,
-            item: this,
-        })
-    }
-    protected _pop(): void {
-        if (this._stack[0]['id'] == this._ID) {
-            this._stack.shift()
-        } else {
-            throw new Error(
-                `Invalid operation in <CustomStackItem>\n\ton destory("${this._ID}")`
-            )
-        }
-    }
-    protected _print(): void {
-        console.log(
-            this._stack.map((item) => {
-                return item.id
-            })
-        )
+        this._action.setVariable(value, this._VID)
     }
 }
 
 type TaioFlowCondition = {
     leftHandSide?: AltParam
     rightHandSide?: AltParam
-    condition: keyof typeof flow.TaioFlowCondition
+    condition: keyof typeof Taio.TaioFlowCondition
 }
 
-export class TaioAction extends CustomStackItem {
-    private _actions: flow.TaioFlowActionExt[]
+type TaioFlowScopeType = 'root' | 'condition' | 'repeat'
+
+export class TaioAction {
+    private _actions: Taio.TaioFlowActionExt[]
     private _buildVersion: number
     private _clientVersion: number
-    private _localBlock?: {
+    private _scopes?: {
         BID: string
-        type: 'root' | 'condition' | 'repeat'
-    }
+        type: TaioFlowScopeType
+    }[]
+    private _verifyBID: string[]
     public name: string
     public summary: string
     public iconGlyph: string
-    public iconColor: flow.HEX
-    private _signedVars: string[]
-    constructor(actionStack?: CustomStack) {
-        super(actionStack)
+    public iconColor: Taio.HEX
+    constructor() {
+        this._actions = []
         this.name = 'untitled'
         this.summary = ''
         this.iconGlyph = constant.DEFAULT_ICON
         this.iconColor = constant.DEFAULT_ICON_COLOR
-        this._actions = []
         this._buildVersion = constant.BUILD_VERSION
         this._clientVersion = constant.CLIENT_VERSION
-        this._signedVars = [
-            '(?<user>([\\w|_|-])+)',
-            '@input',
-            '@clipboard.text',
-            '@date.style\\(\\d,\\d\\)',
-            '@date.format\\([^)|\\r|\\n]+\\)',
-            '@editor.file-name',
-            '@editor.file-extension',
-            '@editor.full-text',
-            '@editor.selection-text',
-            '@editor.selection-location',
-            '@editor.selection-length',
-        ].map((item) => {
-            return `{${item}}`
-        })
-    }
-    protected _pop() {
-        this._localBlockAutoComplete()
-        super._pop()
+        const BID = Taio.genBID()
+        this._scopes = [
+            {
+                type: 'root',
+                BID: BID,
+            },
+        ]
+        this._verifyBID = [BID]
     }
     public builtInVars(
         name:
@@ -139,8 +152,8 @@ export class TaioAction extends CustomStackItem {
     public builtInVars(
         name: 'Current Date',
         style: {
-            dateStyle?: keyof typeof flow.DATE_STYLE
-            timeStyle?: keyof typeof flow.TIME_STYLE
+            dateStyle?: keyof typeof Taio.DATE_STYLE
+            timeStyle?: keyof typeof Taio.TIME_STYLE
         }
     ): FlowVariable
     public builtInVars(
@@ -157,141 +170,58 @@ export class TaioAction extends CustomStackItem {
             if (P.length == 0) {
                 return new FlowVariable(
                     `@date.style(${style.dateStyle},${style.timeStyle})`,
-                    this._stack
+                    this
                 )
             }
             if (typeof P[0] == 'string') {
-                return new FlowVariable(`@date.format(${P[0]})`, this._stack)
+                return new FlowVariable(`@date.format(${P[0]})`, this)
             } else {
                 try {
                     style.dateStyle =
-                        flow.DATE_STYLE[P[0]['dateStyle']] || style.dateStyle
+                        Taio.DATE_STYLE[P[0]['dateStyle']] || style.dateStyle
                 } catch (e) {}
                 try {
                     style.timeStyle =
-                        flow.TIME_STYLE[P[0]['timeStyle']] || style.timeStyle
+                        Taio.TIME_STYLE[P[0]['timeStyle']] || style.timeStyle
                 } catch (e) {}
                 return new FlowVariable(
                     `@date.style(${style.dateStyle},${style.timeStyle})`,
-                    this._stack
+                    this
                 )
             }
         }
         const preset: {
             [key: string]: FlowVariable
         } = {
-            'Last Result': new FlowVariable('@input', this._stack),
-            Clipboard: new FlowVariable('@clipboard.text', this._stack),
-            'File Name': new FlowVariable('@editor.file-name', this._stack),
-            'File Extension': new FlowVariable(
-                '@editor.file-extension',
-                this._stack
-            ),
-            'Full Text': new FlowVariable('@editor.full-text', this._stack),
-            'Selected Text': new FlowVariable(
-                '@editor.selection-text',
-                this._stack
-            ),
+            'Last Result': new FlowVariable('@input', this),
+            Clipboard: new FlowVariable('@clipboard.text', this),
+            'File Name': new FlowVariable('@editor.file-name', this),
+            'File Extension': new FlowVariable('@editor.file-extension', this),
+            'Full Text': new FlowVariable('@editor.full-text', this),
+            'Selected Text': new FlowVariable('@editor.selection-text', this),
             'Selected Location': new FlowVariable(
                 '@editor.selection-location',
-                this._stack
+                this
             ),
             'Selected Length': new FlowVariable(
                 '@editor.selection-length',
-                this._stack
+                this
             ),
         }
         return preset[name]
     }
 
-    private _localBlockAutoComplete(targetBlockId?: string): boolean {
-        if (this._localBlock) {
-            if (!targetBlockId) {
-                switch (this._localBlock.type) {
-                    case 'repeat': {
-                        const reapeatTail: flow.TaioFlowRepeat = {
-                            clientMinVersion: 1,
-                            type: '@flow.repeat-end',
-                            parameters: {
-                                blockIdentifier: this._localBlock.BID,
-                            },
-                        }
-                        delete this._localBlock
-                        this._addAction(reapeatTail)
-                        break
-                    }
-                    case 'condition': {
-                        const conditionFi: flow.TaioFlowConditionControl = {
-                            type: '@flow.endif',
-                            clientMinVersion: 1,
-                            parameters: {
-                                blockIdentifier: this._localBlock.BID,
-                            },
-                        }
-                        delete this._localBlock
-                        this._addAction(conditionFi)
-                        break
-                    }
-                }
-                return true
-            } else if (targetBlockId != this._localBlock.BID) {
-                throw new Error()
-            }
-        }
-        return false
-    }
     private _addAction(
-        item: flow.TaioFlowActionExt,
+        item: Taio.TaioFlowActionExt,
         targetBlockId?: string
     ): void {
-        this._localBlockAutoComplete(targetBlockId)
-        this._actions.push(item)
-    }
-    private _getTaioFlowValFromParam(param?: AltParam): flow.TaioFlowVal {
-        return this._genTaioFlowVal(getRawStrFromParma(param))
-    }
-    private _genTaioFlowVal = (value: string): flow.TaioFlowVal => {
-        const re = new RegExp(
-            `(${SESSION_PREFIX}-(?<mat>${this._signedVars
-                .map((preset) => {
-                    return '(' + preset + ')'
-                })
-                .join('|')}))+`,
-            'gm'
-        )
-        const matches = [] as { start: number; len: number; VID: string }[]
-        const flowVal = {
-            value: undefined,
-            tokens: [],
-        } as flow.TaioFlowVal
-        while (true) {
-            const match = re.exec(value)
-            if (match == null) break
-            matches.push({
-                start: match.index,
-                len: +match[0].length,
-                VID: match.groups['user'] || match.groups['mat'].slice(1, -1),
-            })
-        }
-        const valarr: string[] = value.split('')
-        while (true) {
-            const match = matches.pop()
-            if (typeof match == 'undefined') break
-            valarr.splice(match.start, match.len, '$')
-            flowVal.tokens.push({
-                location: match.start,
-                value: match.VID,
-            })
-        }
-        flowVal.value = valarr.join('')
-        if (flowVal.tokens.length == 0) delete flowVal.tokens
-        return flowVal
+        this.appendItem(item)
     }
 
     // # Action Library
     // ## General
     public comment(text: string = ''): void {
-        const _: flow.TaioFlowComment = {
+        const _: Taio.TaioFlowComment = {
             type: '@comment',
             clientMinVersion: 1,
             parameters: {
@@ -304,25 +234,25 @@ export class TaioAction extends CustomStackItem {
     }
     // ## Text
     public createText(text?: AltParam): void {
-        const _: flow.TaioFlowText = {
+        const _: Taio.TaioFlowText = {
             type: '@text',
             clientMinVersion: 1,
             parameters: {
-                text: this._getTaioFlowValFromParam(text),
+                text: getTaioFlowValFromParam(text),
             },
         }
         this._addAction(_)
     }
     public textCase(
         text?: AltParam,
-        mode: keyof typeof flow.optionTextCase = 'Upper Case'
+        mode: keyof typeof Taio.optionTextCase = 'Upper Case'
     ): void {
-        const _: flow.TaioFlowTextCase = {
+        const _: Taio.TaioFlowTextCase = {
             type: '@text.case',
             clientMinVersion: 1,
             parameters: {
-                mode: flow.optionTextCase[mode],
-                text: this._getTaioFlowValFromParam(text),
+                mode: Taio.optionTextCase[mode],
+                text: getTaioFlowValFromParam(text),
             },
         }
         this._addAction(_)
@@ -330,29 +260,29 @@ export class TaioAction extends CustomStackItem {
     public encodeText(
         text?: AltParam,
         decode?: boolean,
-        mode: keyof typeof flow.optionTextEncode = 'URL Encode'
+        mode: keyof typeof Taio.optionTextEncode = 'URL Encode'
     ): void {
-        const _: flow.TaioFlowTextEncode = {
+        const _: Taio.TaioFlowTextEncode = {
             type: '@text.encode',
             clientMinVersion: 1,
             parameters: {
-                mode: flow.optionTextEncode[mode],
+                mode: Taio.optionTextEncode[mode],
                 decode: decode ? true : false,
-                text: this._getTaioFlowValFromParam(text),
+                text: getTaioFlowValFromParam(text),
             },
         }
         this._addAction(_)
     }
     public count(
         text?: AltParam,
-        mode: keyof typeof flow.optionTextCount = 'By Line'
+        mode: keyof typeof Taio.optionTextCount = 'By Line'
     ): void {
-        const _: flow.TaioFlowTextCount = {
+        const _: Taio.TaioFlowTextCount = {
             type: '@text.count',
             clientMinVersion: 1,
             parameters: {
-                mode: flow.optionTextCount[mode],
-                text: this._getTaioFlowValFromParam(text),
+                mode: Taio.optionTextCount[mode],
+                text: getTaioFlowValFromParam(text),
             },
         }
         this._addAction(_)
@@ -362,13 +292,13 @@ export class TaioAction extends CustomStackItem {
         localtion: number = 0,
         length: number = 1
     ): void {
-        const _: flow.TaioFlowTextRange = {
+        const _: Taio.TaioFlowTextRange = {
             type: '@text.extract-range',
             clientMinVersion: 1,
             parameters: {
                 location: localtion,
                 length: length,
-                text: this._getTaioFlowValFromParam(text),
+                text: getTaioFlowValFromParam(text),
             },
         }
         this._addAction(_)
@@ -376,25 +306,25 @@ export class TaioAction extends CustomStackItem {
     public textFilter(
         text?: AltParam,
         pattern?: AltParam,
-        mode: keyof typeof flow.optionTextFilter = 'Phone Number'
+        mode: keyof typeof Taio.optionTextFilter = 'Phone Number'
     ): void {
-        const _: flow.TaioFlowTextFilter = {
+        const _: Taio.TaioFlowTextFilter = {
             type: '@text.filter',
             clientMinVersion: 1,
             parameters: {
-                text: this._getTaioFlowValFromParam(text),
-                mode: flow.optionTextFilter[mode],
-                pattern: this._getTaioFlowValFromParam(pattern),
+                text: getTaioFlowValFromParam(text),
+                mode: Taio.optionTextFilter[mode],
+                pattern: getTaioFlowValFromParam(pattern),
             },
         }
         this._addAction(_)
     }
     public textTokenization(text?: AltParam): void {
-        const _: flow.TaioFlowTextTokenize = {
+        const _: Taio.TaioFlowTextTokenize = {
             type: '@text.tokenize',
             clientMinVersion: 1,
             parameters: {
-                text: this._getTaioFlowValFromParam(text),
+                text: getTaioFlowValFromParam(text),
             },
         }
     }
@@ -402,29 +332,29 @@ export class TaioAction extends CustomStackItem {
         text?: AltParam,
         pattern?: AltParam,
         replacement?: AltParam,
-        mode: keyof typeof flow.optionTextReplace = 'Case Insensitive'
+        mode: keyof typeof Taio.optionTextReplace = 'Case Insensitive'
     ): void {
-        const _: flow.TaioFlowTextReplace = {
+        const _: Taio.TaioFlowTextReplace = {
             type: '@text.replace',
             clientMinVersion: 1,
             parameters: {
-                text: this._getTaioFlowValFromParam(text),
-                pattern: this._getTaioFlowValFromParam(pattern),
-                replacement: this._getTaioFlowValFromParam(replacement),
-                mode: flow.optionTextReplace[mode],
+                text: getTaioFlowValFromParam(text),
+                pattern: getTaioFlowValFromParam(pattern),
+                replacement: getTaioFlowValFromParam(replacement),
+                mode: Taio.optionTextReplace[mode],
             },
         }
     }
     public trimText(
         text?: AltParam,
-        mode: keyof typeof flow.optionTextTrim = 'Empty Characters'
+        mode: keyof typeof Taio.optionTextTrim = 'Empty Characters'
     ): void {
-        const _: flow.TaioFlowTextTrim = {
+        const _: Taio.TaioFlowTextTrim = {
             type: '@text.trim',
             clientMinVersion: 1,
             parameters: {
-                text: this._getTaioFlowValFromParam(text),
-                mode: flow.optionTextTrim[mode],
+                text: getTaioFlowValFromParam(text),
+                mode: Taio.optionTextTrim[mode],
             },
         }
         this._addAction(_)
@@ -436,12 +366,12 @@ export class TaioAction extends CustomStackItem {
         title: AltParam,
         multiSelect: boolean = false
     ): void {
-        const _: flow.TaioFlowMenu = {
+        const _: Taio.TaioFlowMenu = {
             type: '@ui.menu',
             clientMinVersion: 1,
             parameters: {
-                lines: this._getTaioFlowValFromParam(items),
-                prompt: this._getTaioFlowValFromParam(title),
+                lines: getTaioFlowValFromParam(items),
+                prompt: getTaioFlowValFromParam(title),
                 multiValue: multiSelect,
             },
         }
@@ -451,11 +381,11 @@ export class TaioAction extends CustomStackItem {
     // public showConfirmDialog(): void {}
     // public showToast(): void {}
     public showText(text: AltParam): void {
-        const _: flow.TaioFlowText = {
+        const _: Taio.TaioFlowText = {
             type: '@text',
             clientMinVersion: 1,
             parameters: {
-                text: this._getTaioFlowValFromParam(text),
+                text: getTaioFlowValFromParam(text),
             },
         }
         this._addAction(_)
@@ -489,58 +419,18 @@ export class TaioAction extends CustomStackItem {
     // public getClipping(): void {}
     // public setClippingText(): void {}
     // ## Scripting
-    public IF(
-        condition: TaioFlowCondition,
-        conditionScope: (scope: TaioAction) => void
-    ): {
-        ELSE: (conditionScope: (scope: TaioAction) => void) => void
-    } {
-        const _scope = new TaioAction(this._stack)
-        const _ID = flow.genBID()
-        const conditionIf: flow.TaioFlowConditionControl = {
-            type: '@flow.if',
-            clientMinVersion: 1,
-            parameters: {
-                blockIdentifier: _ID,
-                condition: flow.TaioFlowCondition[condition.condition || 0],
-                lhs: this._getTaioFlowValFromParam(condition.leftHandSide),
-                rhs: this._getTaioFlowValFromParam(condition.rightHandSide),
-            },
-        }
-        this._addAction(conditionIf)
-        this._localBlock = {
-            BID: _ID,
-            type: 'condition',
-        }
-        conditionScope(_scope)
-        _scope._pop()
-        for (const item of _scope.flowExport()) {
-            this._addAction(item, _ID)
-        }
-        const conditionElse: flow.TaioFlowConditionControl = {
-            type: '@flow.else',
-            clientMinVersion: 1,
-            parameters: {
-                blockIdentifier: _ID,
-            },
-        }
-        this._addAction(conditionElse, _ID)
-        return {
-            ELSE: this.ELSE,
-        }
-    }
-    public ELSE(conditionScope: (scope: TaioAction) => void): void {
-        // TODO: check localBlock
-        const _scope = new TaioAction(this._stack)
-        const _ID = this._localBlock['BID']
-        conditionScope(_scope)
-        _scope._pop()
-        for (const item of _scope.flowExport()) {
-            this._addAction(item, _ID)
-        }
+    public If(condition: TaioFlowCondition, scope: () => void) {
+        const taioIf = new TaioFlowIf(this, condition, scope)
+        taioIf._event.addListener('exit', (scopeIf, scopeElse) => {
+            this.spawnChildScope('condition', (BID) => {
+                scopeIf(BID)
+                scopeElse(BID)
+            })
+        })
+        return taioIf
     }
     public afterDelay(interval: number = 1): void {
-        const _: flow.TaioFlowDelay = {
+        const _: Taio.TaioFlowDelay = {
             type: '@flow.delay',
             clientMinVersion: 1,
             parameters: {
@@ -550,7 +440,7 @@ export class TaioAction extends CustomStackItem {
         this._addAction(_)
     }
     public finishRunning(): void {
-        const _: flow.TaioFlowFinish = {
+        const _: Taio.TaioFlowFinish = {
             type: '@flow.finish',
             clientMinVersion: 1,
         }
@@ -564,15 +454,15 @@ export class TaioAction extends CustomStackItem {
                 )
             }
         }
-        const v = new FlowVariable(name, this._stack)
-        const _: flow.TaioFlowVarSet = {
+        const v = new FlowVariable(name, this)
+        const _: Taio.TaioFlowVarSet = {
             type: '@flow.set-variable',
             clientMinVersion: 1,
             parameters: {
                 name: {
                     value: v.VID,
                 },
-                value: this._getTaioFlowValFromParam(value),
+                value: getTaioFlowValFromParam(value),
             },
         }
         this._addAction(_)
@@ -580,42 +470,31 @@ export class TaioAction extends CustomStackItem {
     }
     public getVariable(
         name: AltParam,
-        fallback: keyof typeof flow.optionGlobalTaioFallback = 'Return Empty Text'
+        fallback: keyof typeof Taio.optionGlobalTaioFallback = 'Return Empty Text'
     ): void {
-        const _: flow.TaioFlowVarGet = {
+        const _: Taio.TaioFlowVarGet = {
             type: '@flow.get-variable',
             clientMinVersion: 1,
             parameters: {
-                fallback: flow.optionGlobalTaioFallback[fallback],
-                name: this._getTaioFlowValFromParam(name),
+                fallback: Taio.optionGlobalTaioFallback[fallback],
+                name: getTaioFlowValFromParam(name),
             },
         }
         this._addAction(_)
     }
-    public repeatBlock(
-        count: number,
-        repeatScope: (scope: TaioAction) => void
-    ): void {
-        const _scope = new TaioAction(this._stack)
-        const _ID = flow.genBID()
-        const reapeatHead: flow.TaioFlowRepeat = {
-            type: '@flow.repeat-begin',
-            clientMinVersion: 1,
-            parameters: {
-                blockIdentifier: _ID,
-                count: count,
-            },
-        }
-        this._addAction(reapeatHead)
-        this._localBlock = {
-            BID: _ID,
-            type: 'repeat',
-        }
-        repeatScope(_scope)
-        _scope._pop()
-        for (const item of _scope.flowExport()) {
-            this._addAction(item, _ID)
-        }
+    public repeatBlock(count: number, repeatScope: () => void): void {
+        this.spawnChildScope('repeat', (BID) => {
+            const repeatHead: Taio.TaioFlowRepeat = {
+                type: '@flow.repeat-begin',
+                clientMinVersion: 1,
+                parameters: {
+                    blockIdentifier: BID,
+                    count: count,
+                },
+            }
+            this.appendItem(repeatHead)
+            repeatScope()
+        })
     }
     // public forEach(): void {}
     public runJavaScript(fn: builtInJS.runJS): void {
@@ -628,7 +507,7 @@ export class TaioAction extends CustomStackItem {
         for (const _i in code) {
             code[_i] = code[_i].slice(indentLen)
         }
-        const _: flow.TaioFlowJS = {
+        const _: Taio.TaioFlowJS = {
             type: '@flow.javascript',
             clientMinVersion: 1,
             parameters: {
@@ -665,14 +544,14 @@ export class TaioAction extends CustomStackItem {
                 break
             }
         }
-        const _: flow.TaioFlowRequest = {
+        const _: Taio.TaioFlowRequest = {
             type: '@util.request',
             clientMinVersion: 1,
             parameters: {
-                url: this._getTaioFlowValFromParam(url),
+                url: getTaioFlowValFromParam(url),
                 method: methodNr,
-                body: this._genTaioFlowVal(JSON.stringify(body)),
-                headers: this._genTaioFlowVal(JSON.stringify(headers)),
+                body: genTaioFlowVal(JSON.stringify(body)),
+                headers: genTaioFlowVal(JSON.stringify(headers)),
             },
         }
         this._addAction(_)
@@ -690,18 +569,80 @@ export class TaioAction extends CustomStackItem {
     get flowClientVersion(): number {
         return this._clientVersion
     }
-    public flowSpawn(): TaioAction {
-        return new TaioAction(this._stack)
+    public spawnChildScope(
+        type: TaioFlowScopeType,
+        scope: (BID: string) => void
+    ): void {
+        const BID = Taio.genBID()
+        this._verifyBID.unshift(BID)
+        this._scopes.unshift({
+            BID,
+            type,
+        })
+        scope(BID)
+        if (BID != this._verifyBID.shift()) {
+            // TODO: Err
+        }
+        return
     }
-    public flowExport(): flow.TaioFlowActionExt[] {
-        return this._actions
+    public autoCompleteChildScope(): void {
+        const curScope = this._scopes[0]
+        const verifyBID = this._verifyBID[0]
+        if (curScope['BID'] == verifyBID) {
+            return
+        } else {
+            let item: Taio.TaioFlowActionExt
+            switch (curScope['type']) {
+                case 'root': {
+                    item = {
+                        clientMinVersion: 0,
+                        type: '@flow.root',
+                        parameters: {
+                            blockIdentifier: curScope['BID'],
+                        },
+                    }
+                    break
+                }
+                case 'condition': {
+                    item = {
+                        type: '@flow.endif',
+                        clientMinVersion: 1,
+                        parameters: {
+                            blockIdentifier: curScope['BID'],
+                        },
+                    } as Taio.TaioFlowConditionControl
+                    break
+                }
+                case 'repeat': {
+                    item = {
+                        clientMinVersion: 1,
+                        type: '@flow.repeat-end',
+                        parameters: {
+                            blockIdentifier: curScope['BID'],
+                        },
+                    } as Taio.TaioFlowRepeat
+                    break
+                }
+            }
+            this._scopes.shift()
+            this.appendItem(item, true)
+            this.autoCompleteChildScope()
+        }
+        return
     }
-    public flowImport(item: flow.TaioFlowActionExt): void {
+    public appendItem(
+        item: Taio.TaioFlowActionExt,
+        ignoreVerify?: boolean
+    ): void {
+        if (!ignoreVerify) {
+            this.autoCompleteChildScope()
+        }
         this._actions.push(item)
+        return
     }
-    public flowParse(): flow.TaioFlowInfo {
-        this._localBlockAutoComplete()
-        const actions = [] as flow.TaioFlowAction[]
+    public flowParse(): Taio.TaioFlowInfo {
+        this.autoCompleteChildScope()
+        const actions = [] as Taio.TaioFlowAction[]
         let clientMinVersion: number = 1
         this._actions.forEach((a) => {
             actions.push({
@@ -725,5 +666,53 @@ export class TaioAction extends CustomStackItem {
             },
             actions: actions,
         }
+    }
+}
+
+class TaioFlowIf {
+    private _action: TaioAction
+    private _scopeIf: (BID: string) => void
+    private _scopeElse: (BID: string) => void
+    public _event: EventEmitter
+    constructor(
+        action: TaioAction,
+        condition: TaioFlowCondition,
+        scope: () => void
+    ) {
+        this._action = action
+        this._event = new EventEmitter()
+        this._event.emit('init')
+
+        this._scopeIf = (BID) => {
+            const conditionIf: Taio.TaioFlowConditionControl = {
+                type: '@flow.if',
+                clientMinVersion: 1,
+                parameters: {
+                    blockIdentifier: BID,
+                    condition: Taio.TaioFlowCondition[condition.condition || 0],
+                    lhs: getTaioFlowValFromParam(condition.leftHandSide),
+                    rhs: getTaioFlowValFromParam(condition.rightHandSide),
+                },
+            }
+            this._action.appendItem(conditionIf)
+            scope()
+            const conditionElse: Taio.TaioFlowConditionControl = {
+                type: '@flow.else',
+                clientMinVersion: 1,
+                parameters: {
+                    blockIdentifier: BID,
+                },
+            }
+            this._action.appendItem(conditionElse)
+        }
+    }
+    public ElseIf(condition: TaioFlowCondition, scope: () => void): TaioFlowIf {
+        this.Else()
+        return this._action.If(condition, scope)
+    }
+    public Else(scope?: () => void): void {
+        scope = scope ? scope : () => {}
+        this._scopeElse = scope
+        this._event.emit('exit', this._scopeIf, this._scopeElse)
     }
 }
