@@ -197,4 +197,4 @@ export const $ui = {} as UI
 
 interface View {}
 
-export type runJS = () => void
+// export type runJS = () => void

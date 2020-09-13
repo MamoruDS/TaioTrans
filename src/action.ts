@@ -1,10 +1,11 @@
 import { EventEmitter } from 'events'
 
+import * as beautify from 'js-beautify'
+
 import * as constant from './constant'
 import * as utils from './utils'
 import * as Taio from './taio'
-import * as builtInJS from './builtIn'
-import * as beautify from 'js-beautify'
+import { options as OPT } from './main'
 
 export const SESSION_PREFIX =
     (Date.now() * 5).toString(36).toLocaleUpperCase() +
@@ -39,7 +40,7 @@ const getRawStrFromParma = (param?: AltParam): string => {
                     })
                     .join('\n')
             } else {
-                param = JSON.stringify(param, null, 2)
+                param = JSON.stringify(param, null, OPT.indentLength)
             }
         } else if (typeof param == 'string') {
             //
@@ -90,7 +91,7 @@ const getTaioFlowValFromParam = (param?: AltParam): Taio.TaioFlowVal => {
     return genTaioFlowVal(getRawStrFromParma(param))
 }
 
-class FlowVariable {
+export class FlowVariable {
     private _action: TaioAction
     private _VID: string
     constructor(presetID?: string, action?: TaioAction) {
@@ -115,8 +116,8 @@ class FlowVariable {
 }
 
 type TaioFlowCondition = {
-    leftHandSide?: AltParam
-    rightHandSide?: AltParam
+    leftHandSide: AltParam
+    rightHandSide: AltParam
     condition: keyof typeof Taio.TaioFlowCondition
 }
 
@@ -131,16 +132,17 @@ export class TaioAction implements Taio.Actions {
         type: TaioFlowScopeType
     }[]
     private _verifyBID: string[]
-    public name: string
-    public summary: string
-    public iconGlyph: string
-    public iconColor: Taio.HEX
+    private _name: string
+    private _summary: string
+    private _iconGlyph: string
+    private _iconColor: Taio.HEX
+
     constructor() {
         this._actions = []
-        this.name = 'untitled'
-        this.summary = ''
-        this.iconGlyph = constant.DEFAULT_ICON
-        this.iconColor = constant.DEFAULT_ICON_COLOR
+        this._name = 'untitled'
+        this._summary = ''
+        this._iconGlyph = OPT.defaultIcon
+        this._iconColor = OPT.defaultIconColor
         this._buildVersion = constant.BUILD_VERSION
         this._clientVersion = constant.CLIENT_VERSION
         const BID = Taio.genBID()
@@ -152,32 +154,34 @@ export class TaioAction implements Taio.Actions {
         ]
         this._verifyBID = [BID]
     }
-    public builtInVars(
-        name:
-            | 'Last Result'
-            | 'Clipboard'
-            | 'File Name'
-            | 'File Extension'
-            | 'Full Text'
-            | 'Selected Text'
-            | 'Selected Location'
-            | 'Selected Length'
-    ): FlowVariable
-    public builtInVars(name: 'Last Result'): FlowVariable
-    public builtInVars(
-        name: 'Current Date',
-        style: {
-            dateStyle?: keyof typeof Taio.DATE_STYLE
-            timeStyle?: keyof typeof Taio.TIME_STYLE
-        }
-    ): FlowVariable
-    public builtInVars(
-        name: 'Current Date',
-        customFormat?: string
-    ): FlowVariable
+
+    get name(): string {
+        return this._name
+    }
+    set name(input: string) {
+        this._name = input
+    }
+    get summary(): string {
+        return this._summary
+    }
+    set summary(input: string) {
+        this._summary = input
+    }
+    get icon(): string {
+        return this._iconGlyph
+    }
+    set icon(input: string) {
+        this._iconGlyph = input
+    }
+    get iconColor(): string {
+        return this._iconColor
+    }
+    set iconColor(input: string) {
+        this._iconColor = input
+    }
+
     public builtInVars(name: string, ...P: any[]): FlowVariable {
         if (name == 'Current Date') {
-            // if(typeof P[0] ===)
             const style = {
                 dateStyle: 2,
                 timeStyle: 0,
@@ -987,7 +991,7 @@ export class TaioAction implements Taio.Actions {
     }
     public runJavaScript(code: string | Taio.JSFunc): void {
         if (typeof code == 'function') {
-            const indentLen = 2
+            const indentLen = OPT.indentLength
             const lines: string[] = beautify('' + code, {
                 indent_size: indentLen,
             })
@@ -1289,14 +1293,14 @@ export class TaioAction implements Taio.Actions {
                     : clientMinVersion
         })
         return {
-            name: this.name,
-            summary: this.summary,
+            name: this._name,
+            summary: this._summary,
             buildVersion: this._buildVersion,
             clientVersion: this._clientVersion,
             clientMinVersion: clientMinVersion,
             icon: {
-                glyph: this.iconGlyph,
-                color: this.iconColor,
+                glyph: this._iconGlyph,
+                color: this._iconColor,
             },
             actions: actions,
         }
