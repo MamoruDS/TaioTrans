@@ -226,7 +226,7 @@ export interface TaioFlowMenu extends TaioFlowActionExt {
     }
 }
 // ### Show Alert
-type TaioFlowAlertButtons = {
+export type TaioFlowAlertButtons = {
     title: TaioFlowVal
     value: TaioFlowVal
 }
@@ -254,7 +254,7 @@ export interface TaioFlowDialog extends TaioFlowActionExt {
 }
 // ### Show Toast
 export interface TaioFlowToast extends TaioFlowActionExt {
-    type: '@ui.confirm'
+    type: '@ui.toast'
     parameters: {
         title: TaioFlowVal
         style: number
@@ -572,14 +572,14 @@ export interface TaioFlowRepeat extends TaioFlowActionExt {
 }
 // ### For Each
 export interface TaioFlowForEach extends TaioFlowActionExt {
-    type: '@flow.foreach-begin'
+    type: '@flow.foreach-begin' | '@flow.foreach-end'
     parameters: {
         blockIdentifier: string
-        text: TaioFlowVal
-        mode: number
-        pattern: TaioFlowVal
-        group: number
-        reverse: boolean
+        text?: TaioFlowVal
+        mode?: number
+        pattern?: TaioFlowVal
+        group?: number
+        reverse?: boolean
     }
 }
 export const optionForEachMode = {
@@ -693,23 +693,31 @@ export const optionShareSheet = {
 }
 // ### Compose Email
 export interface TaioFlowComposeEmail extends TaioFlowActionExt {
-    recipients: TaioFlowVal
-    subject: TaioFlowVal
-    body: TaioFlowVal
-    isHTML: boolean
+    type: '@share.compose-email'
+    parameters: {
+        recipients: TaioFlowVal
+        subject: TaioFlowVal
+        body: TaioFlowVal
+        isHTML: boolean
+    }
 }
 // ### Compose Text Message
 export interface TaioFlowComposeTextMessage extends TaioFlowActionExt {
-    recipients: TaioFlowVal
-    body: TaioFlowVal
+    type: '@share.compose-message'
+    parameters: {
+        recipients: TaioFlowVal
+        body: TaioFlowVal
+    }
 }
 
 import { AltParam } from './action'
 
+export type JSFunc = () => void
+
 export interface Actions {
     comment(text?: string): void
-    createText(Input?: AltParam): void
-    textCase(text?: AltParam): void
+    createText(input?: AltParam): void
+    textCase(text?: AltParam, convertTo?: keyof typeof optionTextCase): void
     encodeDecodeText(
         text?: AltParam,
         encodeMode?: keyof typeof optionTextEncode,
@@ -719,7 +727,7 @@ export interface Actions {
     textInRange(text?: AltParam, location?: number, length?: number): void
     textFilter(
         text?: AltParam,
-        matchMode?: keyof typeof optionListFilterMatchMode,
+        matchMode?: keyof typeof optionTextFilter,
         pattern?: AltParam
     ): void
     textTokenization(input?: AltParam): void
@@ -743,7 +751,12 @@ export interface Actions {
     showAlert(
         title?: AltParam,
         message?: AltParam,
-        configureButtons?: number,
+        configureButtons?: [
+            TaioFlowAlertButtons,
+            TaioFlowAlertButtons,
+            TaioFlowAlertButtons,
+            TaioFlowAlertButtons
+        ],
         showCancelButton?: boolean
     ): void
     showConfirmDialog(input?: AltParam): void
@@ -761,7 +774,7 @@ export interface Actions {
     ): void
     compareDiff(text1?: AltParam, text2?: AltParam): void
     filterLines(
-        test?: AltParam,
+        text?: AltParam,
         matchMode?: keyof typeof optionListFilterMatchMode,
         pattern?: AltParam
     ): void
@@ -770,7 +783,10 @@ export interface Actions {
         text?: AltParam,
         revertMode?: keyof typeof optionListReverseMode
     ): void
-    sortLines(text?: AltParam, sortMode?: keyof typeof optionListSortMode): void
+    sortLines(
+        lines?: AltParam,
+        sortMode?: keyof typeof optionListSortMode
+    ): void
     splitText(text?: AltParam, separator?: AltParam): void
     mergeText(lines?: AltParam, jointer?: AltParam): void
     truncateLines(
@@ -836,13 +852,14 @@ export interface Actions {
     ): any
     repeatBlock(repeatTimes: number, scope: () => void): void
     forEach(
-        text?: AltParam,
+        text: AltParam,
+        scope: () => void,
         forEachMode?: keyof typeof optionForEachMode,
         pattern?: AltParam,
         matchGroup?: number,
         reverse?: boolean
     ): void
-    runJavaScript(code: () => void): void
+    runJavaScript(code: string | JSFunc): void
     showDictionaryDefinition(input?: AltParam): void
     getClipboard(): void
     setClipboard(
@@ -851,7 +868,12 @@ export interface Actions {
         expireAfterSeconds?: number
     ): void
     math(input?: AltParam): void
-    speakText(text?: AltParam, language?: AltParam, rate?: number): void
+    speakText(
+        text?: AltParam,
+        language?: AltParam,
+        rate?: number,
+        waitUntilDone?: boolean
+    ): void
     openURL(url?: AltParam, browser?: keyof typeof optionBrowser): void
     webSearch(input?: AltParam): void
     httpRequest(
