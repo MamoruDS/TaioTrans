@@ -1,10 +1,13 @@
-const TaioAction = require('../dist/action').TaioAction
-const action = new TaioAction()
+const taio = require('../dist/main')
+const action = taio.newTaioAction({
+    name: 'variables',
+})
 
 const peach = action.setVariable('peach', 'peach')
 
 // default
 action.showText()
+action.showText(action.builtIn('Last Result'))
 
 // variable
 action.showText(peach)
@@ -25,5 +28,3 @@ action.showText({
 
 // array
 action.showText(['apple', 'pear', peach])
-
-console.log(JSON.stringify(action.export()['actions'], null, 4))
