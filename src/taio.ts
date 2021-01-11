@@ -371,7 +371,7 @@ export const optionListTruncateMode = {
 // ## Editor
 // ### New Document
 export interface TaioFlowEditorNew extends TaioFlowActionExt {
-    type: 'editor.new'
+    type: '@editor.new'
     parameters: {
         text: TaioFlowVal
         filename: TaioFlowVal
@@ -381,7 +381,7 @@ export interface TaioFlowEditorNew extends TaioFlowActionExt {
 }
 // ### Open Document
 export interface TaioFlowEditorOpen extends TaioFlowActionExt {
-    type: 'editor.open'
+    type: '@editor.open'
     parameters: {
         filename: TaioFlowVal
         location: number
@@ -389,7 +389,7 @@ export interface TaioFlowEditorOpen extends TaioFlowActionExt {
 }
 // ### Get File Name
 export interface TaioFlowEditorGetFilename extends TaioFlowActionExt {
-    type: 'editor.filename'
+    type: '@editor.filename'
     parameters: {
         includeExtension: boolean
         includeFolder: boolean
@@ -397,7 +397,7 @@ export interface TaioFlowEditorGetFilename extends TaioFlowActionExt {
 }
 // ### Get Text
 export interface TaioFlowEditorGetText extends TaioFlowActionExt {
-    type: 'editor.get-text'
+    type: '@editor.get-text'
     parameters: {
         filename: TaioFlowVal
         location: number
@@ -406,12 +406,24 @@ export interface TaioFlowEditorGetText extends TaioFlowActionExt {
 }
 // ### Set text
 export interface TaioFlowEditorSetText extends TaioFlowActionExt {
-    type: 'editor.set-text'
+    type: '@editor.set-text'
     parameters: {
         text: TaioFlowVal
         filename: TaioFlowVal
         location: number
         createIfNotExists: boolean
+    }
+}
+// ### Smart Select
+export const optionEditorMatchMode = {
+    'Closest Word': 0,
+    'Closest Sentence': 1,
+    'Closest Paragraph': 2,
+}
+export interface TaioFlowEditorSmartSelect extends TaioFlowActionExt {
+    type: '@editor.smart-select'
+    parameters: {
+        mode: number
     }
 }
 // ### Extend Selection
@@ -426,7 +438,7 @@ export const optionEditorSelectionUnit = {
     'By Character': 2,
 }
 export interface TaioFlowEditorExtendSelection extends TaioFlowActionExt {
-    type: 'editor.extend-selection'
+    type: '@editor.extend-selection'
     parameters: {
         direction: number
         unit: number
@@ -435,14 +447,14 @@ export interface TaioFlowEditorExtendSelection extends TaioFlowActionExt {
 }
 // ### Get Selected Text
 export interface TaioFlowEditorGetSelectedText extends TaioFlowActionExt {
-    type: 'editor.selected-text'
+    type: '@editor.selected-text'
     parameters: {
         fallback: number
     }
 }
 // ### Move Cursor
 export interface TaioFlowEditorMoveCursor extends TaioFlowActionExt {
-    type: 'editor.move-cursor'
+    type: '@editor.move-cursor'
     parameters: {
         direction: number
         unit: number
@@ -451,14 +463,14 @@ export interface TaioFlowEditorMoveCursor extends TaioFlowActionExt {
 }
 // ### Replace Selected Text
 export interface TaioFlowEditorReplaceSelectedText extends TaioFlowActionExt {
-    type: 'editor.replace-selected'
+    type: '@editor.replace-selected'
     parameters: {
         text: TaioFlowVal
     }
 }
 // ### Select Range
 export interface TaioFlowEditorSelectRange extends TaioFlowActionExt {
-    type: 'editor.select-range'
+    type: '@editor.select-range'
     parameters: {
         location: number // default: 0
         length: number // default: 1
@@ -625,7 +637,7 @@ export interface TaioFlowMath extends TaioFlowActionExt {
 }
 // ### Speak Text
 export interface TaioFlowSpeech extends TaioFlowActionExt {
-    type: 'util.speech'
+    type: '@util.speech'
     parameters: {
         text: TaioFlowVal
         language: TaioFlowVal
@@ -635,7 +647,7 @@ export interface TaioFlowSpeech extends TaioFlowActionExt {
 }
 // ### Open URL
 export interface TaioFlowOpenURL extends TaioFlowActionExt {
-    type: 'util.open-url'
+    type: '@util.open-url'
     parameters: {
         url: TaioFlowVal
         browser: number
@@ -647,7 +659,7 @@ export const optionBrowser = {
 }
 // ### Web Search
 export interface TaioFlowWebSearch extends TaioFlowActionExt {
-    type: 'util.web-search'
+    type: '@util.web-search'
     parameters: {
         query: TaioFlowVal
     }
@@ -816,6 +828,7 @@ export interface Actions {
         location?: keyof typeof optionGlobalTaioEditorLocation,
         createIfNotExists?: boolean
     ): void
+    smartSelect(matchMode?: keyof typeof optionEditorMatchMode): void
     extendSelection(
         selectionDirection?: keyof typeof optionEditorSelectionDirection,
         selectionUnit?: keyof typeof optionEditorSelectionUnit,

@@ -658,7 +658,7 @@ export class TaioAction implements Taio.Actions {
         openInEditor: boolean = false
     ): void {
         const _: Taio.TaioFlowEditorNew = {
-            type: 'editor.new',
+            type: '@editor.new',
             clientMinVersion: 1,
             parameters: {
                 text: getTaioFlowValFromParam(text),
@@ -675,7 +675,7 @@ export class TaioAction implements Taio.Actions {
         location: keyof typeof Taio.optionGlobalTaioEditorLocation = 'Device'
     ): void {
         const _: Taio.TaioFlowEditorOpen = {
-            type: 'editor.open',
+            type: '@editor.open',
             clientMinVersion: 1,
             parameters: {
                 filename: getTaioFlowValFromParam(fileName),
@@ -690,7 +690,7 @@ export class TaioAction implements Taio.Actions {
         includeExtension: boolean = true
     ): void {
         const _: Taio.TaioFlowEditorGetFilename = {
-            type: 'editor.filename',
+            type: '@editor.filename',
             clientMinVersion: 1,
             parameters: {
                 includeExtension,
@@ -706,7 +706,7 @@ export class TaioAction implements Taio.Actions {
         whenNotExists: keyof typeof Taio.optionGlobalTaioFallback = 'Return Empty Text'
     ): void {
         const _: Taio.TaioFlowEditorGetText = {
-            type: 'editor.get-text',
+            type: '@editor.get-text',
             clientMinVersion: 1,
             parameters: {
                 filename: getTaioFlowValFromParam(fileName),
@@ -724,7 +724,7 @@ export class TaioAction implements Taio.Actions {
         createIfNotExists?: boolean
     ): void {
         const _: Taio.TaioFlowEditorSetText = {
-            type: 'editor.set-text',
+            type: '@editor.set-text',
             clientMinVersion: 1,
             parameters: {
                 text: getTaioFlowValFromParam(text),
@@ -736,13 +736,26 @@ export class TaioAction implements Taio.Actions {
         this.appendItem(_)
         return
     }
+    public smartSelect(
+        matchMode: keyof typeof Taio.optionEditorMatchMode
+    ): void {
+        const _: Taio.TaioFlowEditorSmartSelect = {
+            type: '@editor.smart-select',
+            clientMinVersion: 42,
+            parameters: {
+                mode: Taio.optionEditorMatchMode[matchMode],
+            },
+        }
+        this.appendItem(_)
+        return
+    }
     public extendSelection(
         selectionDirection: keyof typeof Taio.optionEditorSelectionDirection = 'Both',
         selectionUnit: keyof typeof Taio.optionEditorSelectionUnit = 'By Line',
         numberOfCharacters?: number
     ): void {
         const _: Taio.TaioFlowEditorExtendSelection = {
-            type: 'editor.extend-selection',
+            type: '@editor.extend-selection',
             clientMinVersion: 1,
             parameters: {
                 direction:
@@ -758,7 +771,7 @@ export class TaioAction implements Taio.Actions {
         whenNotExists: keyof typeof Taio.optionGlobalTaioFallback = 'Return Empty Text'
     ): void {
         const _: Taio.TaioFlowEditorGetSelectedText = {
-            type: 'editor.selected-text',
+            type: '@editor.selected-text',
             clientMinVersion: 1,
             parameters: {
                 fallback: Taio.optionGlobalTaioFallback[whenNotExists],
@@ -773,7 +786,7 @@ export class TaioAction implements Taio.Actions {
         numberOfCharacters: number = 0
     ): void {
         const _: Taio.TaioFlowEditorMoveCursor = {
-            type: 'editor.move-cursor',
+            type: '@editor.move-cursor',
             clientMinVersion: 1,
             parameters: {
                 direction:
@@ -787,7 +800,7 @@ export class TaioAction implements Taio.Actions {
     }
     public replaceSelectedText(input?: AltParam): void {
         const _: Taio.TaioFlowEditorReplaceSelectedText = {
-            type: 'editor.replace-selected',
+            type: '@editor.replace-selected',
             clientMinVersion: 1,
             parameters: {
                 text: getTaioFlowValFromParam(input),
@@ -798,7 +811,7 @@ export class TaioAction implements Taio.Actions {
     }
     public selectRange(location: number = 0, length: number = 1): void {
         const _: Taio.TaioFlowEditorSelectRange = {
-            type: 'editor.select-range',
+            type: '@editor.select-range',
             clientMinVersion: 1,
             parameters: {
                 location,
@@ -882,7 +895,7 @@ export class TaioAction implements Taio.Actions {
         return
     }
     // ## Scripting
-    public If(condition: TaioFlowCondition, scope: () => void):TaioFlowIf {
+    public If(condition: TaioFlowCondition, scope: () => void): TaioFlowIf {
         const taioIf = new TaioFlowIf(this, condition, scope)
         taioIf._event.addListener('exit', (scopeIf, scopeElse) => {
             this.spawnChildScope('condition', (BID) => {
@@ -1070,7 +1083,7 @@ export class TaioAction implements Taio.Actions {
         waitUntilDone: boolean = true
     ): void {
         const _: Taio.TaioFlowSpeech = {
-            type: 'util.speech',
+            type: '@util.speech',
             clientMinVersion: 1,
             parameters: {
                 text: getTaioFlowValFromParam(text),
@@ -1087,7 +1100,7 @@ export class TaioAction implements Taio.Actions {
         browser: keyof typeof Taio.optionBrowser = 'In-app Safari'
     ): void {
         const _: Taio.TaioFlowOpenURL = {
-            type: 'util.open-url',
+            type: '@util.open-url',
             clientMinVersion: 1,
             parameters: {
                 url: getTaioFlowValFromParam(url),
@@ -1099,7 +1112,7 @@ export class TaioAction implements Taio.Actions {
     }
     public webSearch(input?: AltParam): void {
         const _: Taio.TaioFlowWebSearch = {
-            type: 'util.web-search',
+            type: '@util.web-search',
             clientMinVersion: 1,
             parameters: {
                 query: getTaioFlowValFromParam(input),

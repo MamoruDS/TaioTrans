@@ -219,6 +219,9 @@ class TaioAction implements Taio.Actions {
     ): void {
         this._action.setText(text, fileName, location, createIfNotExists)
     }
+    smartSelect(matchMode?: keyof typeof Taio.optionEditorMatchMode): void {
+        this._action.smartSelect(matchMode)
+    }
     extendSelection(
         selectionDirection?: keyof typeof Taio.optionEditorSelectionDirection,
         selectionUnit?: keyof typeof Taio.optionEditorSelectionUnit,
