@@ -522,15 +522,17 @@ export class TaioAction implements Taio.Actions {
         )}\n</body>\n</html>`,
         title: AltParam = '',
         showsProgress: boolean = false,
+        fullScreen: boolean = false,
         opaqueBackground: boolean = true
     ): void {
         const _: Taio.TaioFlowRenderHTML = {
             type: '@ui.render-html',
-            clientMinVersion: 1,
+            clientMinVersion: 96,
             parameters: {
                 html: getTaioFlowValFromParam(code),
                 title: getTaioFlowValFromParam(title),
-                showProgress: showsProgress,
+                showsProgress: showsProgress,
+                fullScreen: fullScreen,
                 opaque: opaqueBackground,
             },
         }
@@ -608,13 +610,18 @@ export class TaioAction implements Taio.Actions {
         this.appendItem(_)
         return
     }
-    public splitText(text?: AltParam, separator: AltParam = ''): void {
+    public splitText(
+        text?: AltParam,
+        separator: AltParam = '',
+        matchMode: keyof typeof Taio.optionListSplitMatchMode = 'Matches String'
+    ): void {
         const _: Taio.TaioFlowListSplit = {
             type: '@text.split',
-            clientMinVersion: 1,
+            clientMinVersion: 96,
             parameters: {
                 text: getTaioFlowValFromParam(text),
                 separator: getTaioFlowValFromParam(separator),
+                mode: Taio.optionListSplitMatchMode[matchMode],
             },
         }
         this.appendItem(_)

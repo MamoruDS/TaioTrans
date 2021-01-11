@@ -281,7 +281,8 @@ export interface TaioFlowRenderHTML extends TaioFlowActionExt {
     parameters: {
         html: TaioFlowVal
         title: TaioFlowVal
-        showProgress: boolean
+        showsProgress: boolean
+        fullScreen: boolean
         opaque: boolean
     }
 }
@@ -345,7 +346,12 @@ export interface TaioFlowListSplit extends TaioFlowActionExt {
     parameters: {
         text: TaioFlowVal
         separator: TaioFlowVal
+        mode: number
     }
+}
+export const optionListSplitMatchMode = {
+    'Matches String': 0,
+    'Matches Regex': 1,
 }
 // ### Merge Text
 export interface TaioFlowListMerge extends TaioFlowActionExt {
@@ -788,6 +794,7 @@ export interface Actions {
         code?: AltParam,
         title?: AltParam,
         showsProgress?: boolean,
+        fullScreen?: boolean,
         opaqueBackground?: boolean
     ): void
     compareDiff(text1?: AltParam, text2?: AltParam): void
@@ -805,7 +812,11 @@ export interface Actions {
         lines?: AltParam,
         sortMode?: keyof typeof optionListSortMode
     ): void
-    splitText(text?: AltParam, separator?: AltParam): void
+    splitText(
+        text?: AltParam,
+        separator?: AltParam,
+        matchMode?: keyof typeof optionListSplitMatchMode
+    ): void
     mergeText(lines?: AltParam, jointer?: AltParam): void
     truncateLines(
         lines?: AltParam,
