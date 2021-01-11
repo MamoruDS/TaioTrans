@@ -8,6 +8,9 @@
 
 ```shell
 npm i taiotrans
+
+# if you are using typescript
+npm i -D @types/node
 ```
 
 ## Usage
@@ -15,7 +18,7 @@ npm i taiotrans
 ### create new action
 
 ```javascript
-const taio = require('taiotrans')
+import * as taio from 'taiotrans'
 
 const action1 = taio.newTaioAction({
     name: 'Example Action',
@@ -145,26 +148,24 @@ action.runJavaScript(() => {
     //  $actions.finish();
 })
 
-// embedding
-const fs = require('fs')
-action.runJavaScript(fs.readFileSync('code.js', { encoding: 'utf-8' }))
+// alternative method: embedding code file
+import { readFileSync } from 'fs'
+action.runJavaScript(readFileSync('code.js', { encoding: 'utf-8' }))
 ```
 
 declaration of built-in methods
 
 ```javascript
-const { $actions, $app } = require('taiotrans/dist/builtIn')
+import { $actions, $app } from 'taiotrans/dist/builtIn'
 ```
 
  <p align="center" style="align:center;height:250px;"><img src="https://github.com/MamoruDS/TaioTrans/raw/main/static/MPDM195XBO2_2020-09-14_06-50-57.png" alt="logo"></p>
 
-### export
+### export to file
 
 ```javascript
-console.log(action.toString())
-
-const fs = require('fs')
-fs.writeFileSync('action.json', action)
+import { writeFileSync } from 'fs'
+writeFileSync('action.json', action.toString())
 ```
 
 ## License
