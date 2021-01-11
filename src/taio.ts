@@ -118,6 +118,7 @@ export const optionTextEncode = {
     'Base64 Encode': 1,
     'HTML Entity Encode': 2,
     'JSON Escape': 3,
+    'URI Component Encode': 4,
 }
 // ### Count
 export interface TaioFlowTextCount extends TaioFlowActionExt {
@@ -391,9 +392,14 @@ export interface TaioFlowEditorOpen extends TaioFlowActionExt {
 export interface TaioFlowEditorGetFilename extends TaioFlowActionExt {
     type: '@editor.filename'
     parameters: {
+        mode: number
         includeExtension: boolean
-        includeFolder: boolean
     }
+}
+export const optionEditorFileNameStyle = {
+    'Name Only': 0,
+    'Include Folder': 1,
+    'Full Path': 2,
 }
 // ### Get Text
 export interface TaioFlowEditorGetText extends TaioFlowActionExt {
@@ -415,16 +421,16 @@ export interface TaioFlowEditorSetText extends TaioFlowActionExt {
     }
 }
 // ### Smart Select
-export const optionEditorMatchMode = {
-    'Closest Word': 0,
-    'Closest Sentence': 1,
-    'Closest Paragraph': 2,
-}
 export interface TaioFlowEditorSmartSelect extends TaioFlowActionExt {
     type: '@editor.smart-select'
     parameters: {
         mode: number
     }
+}
+export const optionEditorMatchMode = {
+    'Closest Word': 0,
+    'Closest Sentence': 1,
+    'Closest Paragraph': 2,
 }
 // ### Extend Selection
 export const optionEditorSelectionDirection = {
@@ -816,7 +822,10 @@ export interface Actions {
         fileName?: AltParam,
         location?: keyof typeof optionGlobalTaioEditorLocation
     ): void
-    getFileName(includeFolder?: boolean, includeExtension?: boolean): void
+    getFileName(
+        style?: keyof typeof optionEditorFileNameStyle,
+        includeExtension?: boolean
+    ): void
     getText(
         fileName?: AltParam,
         location?: keyof typeof optionGlobalTaioEditorLocation,

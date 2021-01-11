@@ -201,8 +201,8 @@ class TaioAction implements Taio.Actions {
     ): void {
         this._action.openDocument(fileName, location)
     }
-    getFileName(includeFolder?: boolean, includeExtension?: boolean): void {
-        this._action.getFileName(includeFolder, includeExtension)
+    getFileName(style?: keyof typeof Taio.optionEditorFileNameStyle, includeExtension?: boolean): void {
+        this._action.getFileName(style, includeExtension)
     }
     getText(
         fileName?: AltParam,

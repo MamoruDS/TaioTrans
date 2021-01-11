@@ -279,7 +279,7 @@ export class TaioAction implements Taio.Actions {
     ): void {
         const _: Taio.TaioFlowTextEncode = {
             type: '@text.encode',
-            clientMinVersion: 1,
+            clientMinVersion: 84,
             parameters: {
                 text: getTaioFlowValFromParam(text),
                 mode: Taio.optionTextEncode[encodeMode],
@@ -686,15 +686,15 @@ export class TaioAction implements Taio.Actions {
         return
     }
     public getFileName(
-        includeFolder: boolean = true,
+        style: keyof typeof Taio.optionEditorFileNameStyle = 'Include Folder',
         includeExtension: boolean = true
     ): void {
         const _: Taio.TaioFlowEditorGetFilename = {
             type: '@editor.filename',
-            clientMinVersion: 1,
+            clientMinVersion: 52,
             parameters: {
+                mode: Taio.optionEditorFileNameStyle[style],
                 includeExtension,
-                includeFolder,
             },
         }
         this.appendItem(_)
