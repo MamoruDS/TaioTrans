@@ -111,7 +111,13 @@ export interface TaioFlowTextEncode extends TaioFlowActionExt {
         mode: number
         decode: boolean
         text: TaioFlowVal
+        base64Options: number
     }
+}
+export const optionBase64Mode = {
+    'No Line Endings': 0,
+    '64 Characters': 1,
+    '76 Characters': 2,
 }
 export const optionTextEncode = {
     'URL Encode': 0,
@@ -745,6 +751,7 @@ export interface Actions {
     encodeDecodeText(
         text?: AltParam,
         encodeMode?: keyof typeof optionTextEncode,
+        base64Options?: keyof typeof optionBase64Mode,
         decode?: boolean
     ): void
     count(text?: AltParam, countMode?: keyof typeof optionTextCount): void

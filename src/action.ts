@@ -275,14 +275,16 @@ export class TaioAction implements Taio.Actions {
     public encodeDecodeText(
         text?: AltParam,
         encodeMode: keyof typeof Taio.optionTextEncode = 'URL Encode',
+        base64Options: keyof typeof Taio.optionBase64Mode = 'No Line Endings',
         decode: boolean = false
     ): void {
         const _: Taio.TaioFlowTextEncode = {
             type: '@text.encode',
-            clientMinVersion: 84,
+            clientMinVersion: 155,
             parameters: {
                 text: getTaioFlowValFromParam(text),
                 mode: Taio.optionTextEncode[encodeMode],
+                base64Options: Taio.optionBase64Mode[base64Options],
                 decode,
             },
         }

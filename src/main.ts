@@ -61,9 +61,10 @@ class TaioAction implements Taio.Actions {
     encodeDecodeText(
         text?: AltParam,
         encodeMode?: keyof typeof Taio.optionTextEncode,
+        base64Options?: keyof typeof Taio.optionBase64Mode,
         decode?: boolean
     ): void {
-        this._action.encodeDecodeText(text, encodeMode, decode)
+        this._action.encodeDecodeText(text, encodeMode, base64Options, decode)
     }
     count(
         text?: AltParam,
