@@ -168,6 +168,36 @@ import { writeFileSync } from 'fs'
 writeFileSync('action.json', action.toString())
 ```
 
+## Import to Taio
+
+### local testing
+
+Import to Taio by using url-scheme
+
+```javascript
+const http = require('http')
+const fs = require('fs')
+
+const port = 9000
+
+http.createServer((_, res) => {
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(fs.readFileSync('actions.json'))
+}).listen(port, () => {
+    console.log(`server start at ${port}`)
+})
+```
+
+then visit the url below in safari on your device
+
+```
+taio://actions?action=import&url=<your_ip:port>
+```
+
+### submit to official sharing community
+
+You can find how to submit your actions file in this [page](https://actions.taio.app/).
+
 ## License
 
 MIT © MamoruDS
