@@ -61,9 +61,10 @@ class TaioAction implements Taio.Actions {
     encodeDecodeText(
         text?: AltParam,
         encodeMode?: keyof typeof Taio.optionTextEncode,
+        base64Options?: keyof typeof Taio.optionBase64Mode,
         decode?: boolean
     ): void {
-        this._action.encodeDecodeText(text, encodeMode, decode)
+        this._action.encodeDecodeText(text, encodeMode, base64Options, decode)
     }
     count(
         text?: AltParam,
@@ -145,9 +146,16 @@ class TaioAction implements Taio.Actions {
         code?: AltParam,
         title?: AltParam,
         showsProgress?: boolean,
+        fullScreen?: boolean,
         opaqueBackground?: boolean
     ): void {
-        this._action.showHTML(code, title, showsProgress, opaqueBackground)
+        this._action.showHTML(
+            code,
+            title,
+            showsProgress,
+            fullScreen,
+            opaqueBackground
+        )
     }
     compareDiff(text1?: AltParam, text2?: AltParam): void {
         this._action.compareDiff(text1, text2)
@@ -174,8 +182,12 @@ class TaioAction implements Taio.Actions {
     ): void {
         this._action.sortLines(lines, sortMode)
     }
-    splitText(text?: AltParam, separator?: AltParam): void {
-        this._action.splitText(text, separator)
+    splitText(
+        text?: AltParam,
+        separator?: AltParam,
+        matchMode?: keyof typeof Taio.optionListSplitMatchMode
+    ): void {
+        this._action.splitText(text, separator, matchMode)
     }
     mergeText(lines?: AltParam, jointer?: AltParam): void {
         this._action.mergeText(lines, jointer)
@@ -201,8 +213,11 @@ class TaioAction implements Taio.Actions {
     ): void {
         this._action.openDocument(fileName, location)
     }
-    getFileName(includeFolder?: boolean, includeExtension?: boolean): void {
-        this._action.getFileName(includeFolder, includeExtension)
+    getFileName(
+        style?: keyof typeof Taio.optionEditorFileNameStyle,
+        includeExtension?: boolean
+    ): void {
+        this._action.getFileName(style, includeExtension)
     }
     getText(
         fileName?: AltParam,

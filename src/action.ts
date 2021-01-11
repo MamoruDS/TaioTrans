@@ -275,14 +275,16 @@ export class TaioAction implements Taio.Actions {
     public encodeDecodeText(
         text?: AltParam,
         encodeMode: keyof typeof Taio.optionTextEncode = 'URL Encode',
+        base64Options: keyof typeof Taio.optionBase64Mode = 'No Line Endings',
         decode: boolean = false
     ): void {
         const _: Taio.TaioFlowTextEncode = {
             type: '@text.encode',
-            clientMinVersion: 1,
+            clientMinVersion: 155,
             parameters: {
                 text: getTaioFlowValFromParam(text),
                 mode: Taio.optionTextEncode[encodeMode],
+                base64Options: Taio.optionBase64Mode[base64Options],
                 decode,
             },
         }
@@ -522,15 +524,17 @@ export class TaioAction implements Taio.Actions {
         )}\n</body>\n</html>`,
         title: AltParam = '',
         showsProgress: boolean = false,
+        fullScreen: boolean = false,
         opaqueBackground: boolean = true
     ): void {
         const _: Taio.TaioFlowRenderHTML = {
             type: '@ui.render-html',
-            clientMinVersion: 1,
+            clientMinVersion: 96,
             parameters: {
                 html: getTaioFlowValFromParam(code),
                 title: getTaioFlowValFromParam(title),
-                showProgress: showsProgress,
+                showsProgress: showsProgress,
+                fullScreen: fullScreen,
                 opaque: opaqueBackground,
             },
         }
@@ -608,13 +612,18 @@ export class TaioAction implements Taio.Actions {
         this.appendItem(_)
         return
     }
-    public splitText(text?: AltParam, separator: AltParam = ''): void {
+    public splitText(
+        text?: AltParam,
+        separator: AltParam = '',
+        matchMode: keyof typeof Taio.optionListSplitMatchMode = 'Matches String'
+    ): void {
         const _: Taio.TaioFlowListSplit = {
             type: '@text.split',
-            clientMinVersion: 1,
+            clientMinVersion: 96,
             parameters: {
                 text: getTaioFlowValFromParam(text),
                 separator: getTaioFlowValFromParam(separator),
+                mode: Taio.optionListSplitMatchMode[matchMode],
             },
         }
         this.appendItem(_)
@@ -686,15 +695,15 @@ export class TaioAction implements Taio.Actions {
         return
     }
     public getFileName(
-        includeFolder: boolean = true,
+        style: keyof typeof Taio.optionEditorFileNameStyle = 'Include Folder',
         includeExtension: boolean = true
     ): void {
         const _: Taio.TaioFlowEditorGetFilename = {
             type: '@editor.filename',
-            clientMinVersion: 1,
+            clientMinVersion: 52,
             parameters: {
+                mode: Taio.optionEditorFileNameStyle[style],
                 includeExtension,
-                includeFolder,
             },
         }
         this.appendItem(_)

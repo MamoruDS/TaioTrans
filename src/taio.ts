@@ -111,13 +111,20 @@ export interface TaioFlowTextEncode extends TaioFlowActionExt {
         mode: number
         decode: boolean
         text: TaioFlowVal
+        base64Options: number
     }
+}
+export const optionBase64Mode = {
+    'No Line Endings': 0,
+    '64 Characters': 1,
+    '76 Characters': 2,
 }
 export const optionTextEncode = {
     'URL Encode': 0,
     'Base64 Encode': 1,
     'HTML Entity Encode': 2,
     'JSON Escape': 3,
+    'URI Component Encode': 4,
 }
 // ### Count
 export interface TaioFlowTextCount extends TaioFlowActionExt {
@@ -280,7 +287,8 @@ export interface TaioFlowRenderHTML extends TaioFlowActionExt {
     parameters: {
         html: TaioFlowVal
         title: TaioFlowVal
-        showProgress: boolean
+        showsProgress: boolean
+        fullScreen: boolean
         opaque: boolean
     }
 }
@@ -344,7 +352,12 @@ export interface TaioFlowListSplit extends TaioFlowActionExt {
     parameters: {
         text: TaioFlowVal
         separator: TaioFlowVal
+        mode: number
     }
+}
+export const optionListSplitMatchMode = {
+    'Matches String': 0,
+    'Matches Regex': 1,
 }
 // ### Merge Text
 export interface TaioFlowListMerge extends TaioFlowActionExt {
@@ -391,9 +404,14 @@ export interface TaioFlowEditorOpen extends TaioFlowActionExt {
 export interface TaioFlowEditorGetFilename extends TaioFlowActionExt {
     type: '@editor.filename'
     parameters: {
+        mode: number
         includeExtension: boolean
-        includeFolder: boolean
     }
+}
+export const optionEditorFileNameStyle = {
+    'Name Only': 0,
+    'Include Folder': 1,
+    'Full Path': 2,
 }
 // ### Get Text
 export interface TaioFlowEditorGetText extends TaioFlowActionExt {
@@ -415,16 +433,16 @@ export interface TaioFlowEditorSetText extends TaioFlowActionExt {
     }
 }
 // ### Smart Select
-export const optionEditorMatchMode = {
-    'Closest Word': 0,
-    'Closest Sentence': 1,
-    'Closest Paragraph': 2,
-}
 export interface TaioFlowEditorSmartSelect extends TaioFlowActionExt {
     type: '@editor.smart-select'
     parameters: {
         mode: number
     }
+}
+export const optionEditorMatchMode = {
+    'Closest Word': 0,
+    'Closest Sentence': 1,
+    'Closest Paragraph': 2,
 }
 // ### Extend Selection
 export const optionEditorSelectionDirection = {
@@ -733,6 +751,7 @@ export interface Actions {
     encodeDecodeText(
         text?: AltParam,
         encodeMode?: keyof typeof optionTextEncode,
+        base64Options?: keyof typeof optionBase64Mode,
         decode?: boolean
     ): void
     count(text?: AltParam, countMode?: keyof typeof optionTextCount): void
@@ -782,6 +801,7 @@ export interface Actions {
         code?: AltParam,
         title?: AltParam,
         showsProgress?: boolean,
+        fullScreen?: boolean,
         opaqueBackground?: boolean
     ): void
     compareDiff(text1?: AltParam, text2?: AltParam): void
@@ -799,7 +819,11 @@ export interface Actions {
         lines?: AltParam,
         sortMode?: keyof typeof optionListSortMode
     ): void
-    splitText(text?: AltParam, separator?: AltParam): void
+    splitText(
+        text?: AltParam,
+        separator?: AltParam,
+        matchMode?: keyof typeof optionListSplitMatchMode
+    ): void
     mergeText(lines?: AltParam, jointer?: AltParam): void
     truncateLines(
         lines?: AltParam,
@@ -816,7 +840,10 @@ export interface Actions {
         fileName?: AltParam,
         location?: keyof typeof optionGlobalTaioEditorLocation
     ): void
-    getFileName(includeFolder?: boolean, includeExtension?: boolean): void
+    getFileName(
+        style?: keyof typeof optionEditorFileNameStyle,
+        includeExtension?: boolean
+    ): void
     getText(
         fileName?: AltParam,
         location?: keyof typeof optionGlobalTaioEditorLocation,
