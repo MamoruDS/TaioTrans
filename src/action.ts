@@ -26,6 +26,9 @@ const SIGNED_VARS = [
     '@editor.selection-text',
     '@editor.selection-location',
     '@editor.selection-length',
+    '@char.tab',
+    '@char.carriage-return',
+    '@char.line-feed',
 ].map((item) => {
     return `{${item}}`
 })
@@ -52,6 +55,7 @@ const getRawStrFromParma = (param?: AltParam): string => {
 }
 
 const genTaioFlowVal = (value: string): Taio.TaioFlowVal => {
+    console.log(value)
     const re = new RegExp(
         `(${SESSION_PREFIX}-(?<mat>${SIGNED_VARS.map((preset) => {
             return '(' + preset + ')'
@@ -180,7 +184,7 @@ export class TaioAction implements Taio.Actions {
         this._iconColor = input
     }
 
-    public builtInVars(name: string, ...P: any[]): FlowVariable {
+    public builtInVars(name: Taio.PresetVars, ...P: any[]): FlowVariable {
         if (name == 'Current Date') {
             const style = {
                 dateStyle: 2,
@@ -213,7 +217,7 @@ export class TaioAction implements Taio.Actions {
             [key: string]: FlowVariable
         } = {
             'Last Result': new FlowVariable('@input', this),
-            Clipboard: new FlowVariable('@clipboard.text', this),
+            'Clipboard': new FlowVariable('@clipboard.text', this), // prettier-ignore
             'File Name': new FlowVariable('@editor.file-name', this),
             'File Extension': new FlowVariable('@editor.file-extension', this),
             'Full Text': new FlowVariable('@editor.full-text', this),
@@ -226,6 +230,10 @@ export class TaioAction implements Taio.Actions {
                 '@editor.selection-length',
                 this
             ),
+            'Tab': new FlowVariable('@char.tab', this), // prettier-ignore
+            'Carriage Return': new FlowVariable('@char.carriage-return', this),
+            'Line Feed': new FlowVariable('@char.line-feed', this),
+            // TODO: do not forget register the RegExp on SIGNED_VARS
         }
         return preset[name]
     }
@@ -1147,6 +1155,14 @@ export class TaioAction implements Taio.Actions {
                 body: getTaioFlowValFromParam(body),
                 headers: getTaioFlowValFromParam(headers),
             },
+        }
+        this.appendItem(_)
+        return
+    }
+    public generateUUID(): void {
+        const _: Taio.TaioFlowGenerateUUID = {
+            type: '@util.uuid',
+            clientMinVersion: 183,
         }
         this.appendItem(_)
         return
