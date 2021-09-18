@@ -191,7 +191,7 @@ http.createServer((_, res) => {
 then visit the url below in safari on your device
 
 ```
-taio://actions?action=import&url=<your_ip:port>
+taio://actions?action=import&url=http%3A%2F%2F<your_ip:port>
 ```
 
 ### submit to official sharing community
