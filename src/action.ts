@@ -55,40 +55,30 @@ const getRawStrFromParma = (param?: AltParam): string => {
 }
 
 const genTaioFlowVal = (value: string): Taio.TaioFlowVal => {
-    console.log(value)
-    const re = new RegExp(
-        `(${SESSION_PREFIX}-(?<mat>${SIGNED_VARS.map((preset) => {
-            return '(' + preset + ')'
-        }).join('|')}))+`,
-        'gm'
-    )
-    const matches = [] as { start: number; len: number; VID: string }[]
     const flowVal = {
         value: undefined,
         tokens: [],
     } as Taio.TaioFlowVal
+    let input = value
     while (true) {
-        const match = re.exec(value)
+        const re = new RegExp(
+            `(${SESSION_PREFIX}-(?<mat>${SIGNED_VARS.map((preset) => {
+                return '(' + preset + ')'
+            }).join('|')}))+`,
+            'gm'
+        )
+        const match = re.exec(input)
         if (match == null) break
-        matches.push({
-            start: match.index,
-            len: +match[0].length,
-            VID: match.groups['user'] || match.groups['mat'].slice(1, -1),
+        const _input: string[] = input.split('')
+        _input.splice(match.index, match[0].length, '$')
+        input = _input.join('')
+        flowVal.tokens.unshift({
+            location: match.index,
+            value: match.groups['user'] || match.groups['mat'].slice(1, -1),
         })
     }
-    const valarr: string[] = value.split('')
-    while (true) {
-        const match = matches.pop()
-        if (typeof match == 'undefined') break
-        valarr.splice(match.start, match.len, '$')
-        flowVal.tokens.push({
-            location: match.start,
-            value: match.VID,
-        })
-    }
-    flowVal.value = valarr.join('')
     if (flowVal.tokens.length == 0) delete flowVal.tokens
-    return flowVal
+    return { ...flowVal, value: input }
 }
 
 const getTaioFlowValFromParam = (param?: AltParam): Taio.TaioFlowVal => {
