@@ -33,6 +33,9 @@ class TaioAction implements Taio.Actions {
             | 'Selected Text'
             | 'Selected Location'
             | 'Selected Length'
+            | 'Tab'
+            | 'Carriage Return'
+            | 'Line Feed'
     ): FlowVariable
     builtIn(
         name: 'Current Date',
@@ -42,7 +45,7 @@ class TaioAction implements Taio.Actions {
         }
     ): FlowVariable
     builtIn(name: 'Current Date', customFormat?: string): FlowVariable
-    builtIn(name: string, ...P: any[]): FlowVariable {
+    builtIn(name: Taio.PresetVars, ...P: any[]): FlowVariable {
         return this._action.builtInVars(name, ...P)
     }
 
@@ -373,6 +376,9 @@ class TaioAction implements Taio.Actions {
         body?: AltParam
     ): void {
         this._action.httpRequest(url, method, headers, body)
+    }
+    generateUUID(): void {
+        this._action.generateUUID()
     }
     markdownToHTML(input?: AltParam, includeTemplate?: boolean): void {
         this._action.markdownToHTML(input, includeTemplate)

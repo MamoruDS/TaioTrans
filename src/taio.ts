@@ -13,6 +13,9 @@ export type PresetVars =
     | 'Selected Text'
     | 'Selected Location'
     | 'Selected Length'
+    | 'Tab'
+    | 'Carriage Return'
+    | 'Line Feed'
 
 export const DATE_STYLE = {
     'No Style': 0,
@@ -698,6 +701,10 @@ export const optionRequestMethod = {
     PUT: 2,
     PATCH: 3,
     DELETE: 4,
+}
+// ### Generate UUID
+export interface TaioFlowGenerateUUID extends TaioFlowActionExt {
+    type: '@util.uuid'
 }
 // ### Markdown to HTML
 export interface TaioFlowMD2HTML extends TaioFlowActionExt {
